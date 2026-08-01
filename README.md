@@ -41,9 +41,9 @@ poetry run python3 manage.py migrate
 ```bash
 poetry run python3 manage.py createsuperuser
 ```
-  a. Enter a username of you choice.
-  b. Enter an e-mail of your choice. (I suggest a moc e-mail.)
-  c. Enter a password of your choice.
+  1. Enter a username of you choice.
+  2. Enter an e-mail of your choice. (I suggest a moc e-mail.)
+  3. Enter a password of your choice.
 
 ### Start the web site
 
