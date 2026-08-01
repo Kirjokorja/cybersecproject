@@ -53,4 +53,4 @@ poetry run python3 manage.py createsuperuser
 poetry run python3 manage.py runserver
 ```
 
-2. Open the site in a browser by using URL  `http://127.0.0.1:8000/`.
+2. Open the site in a browser by using URL  `http://127.0.0.1:8000/polls/`.
