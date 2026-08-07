@@ -1,8 +1,9 @@
 from django.db.models import F
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views import generic
+from django.contrib.auth.forms import UserCreationForm
 from .models import Choice, Question
 
 class IndexView(generic.ListView):
@@ -17,10 +18,18 @@ class DetailView(generic.DetailView):
     model = Question
     template_name = "polls/detail.html"
 
+def register(request):
+    if request.POST:
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect("login/")
+    return render(request, reverse("polls:register"), {"form": form})
+
 
 def results(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
-    return render(request, "polls/results.html", {"question": question})
+    return render(request, reverse("polls:results"), {"question": question})
 
 
 def vote(request, question_id):
