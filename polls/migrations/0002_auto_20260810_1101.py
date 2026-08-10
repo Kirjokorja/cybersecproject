@@ -5,7 +5,8 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 def add_users(apps, schema_editor):
-    User.objects.all().delete()
+    if len(User.objects.all()) > 0:
+        User.objects.all().delete()
     with transaction.atomic():
         adminuser = User.objects.create_superuser(username="admin", email="admin@admin.example", password="thesuperboss")
         adminuser.save()
