@@ -5,6 +5,11 @@
     <title>Result</title>
   </head>
   <body>
+    <form action="/logout/"  method="POST">
+		    {% csrf_token %}
+        <input type="submit" value="Logout"/>
+    </form>
+
     <h1>{{ question.question_text }}</h1>
 
     <ul>

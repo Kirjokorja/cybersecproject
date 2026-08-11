@@ -5,8 +5,12 @@
     <title>Question</title>
   </head>
     <body>
-      <form action="{% url 'polls:vote' question.id %}" method="post">
-    {% csrf_token %}
+      <form action="/logout/" method="POST">
+        {% csrf_token %}
+        <input type="submit" value="Logout"/>
+      </form>
+      <form action="{% url 'polls:vote' question.id %}" method="POST">
+      {% csrf_token %}
       <fieldset>
           <legend><h1>{{ question.question_text }}</h1></legend>
           {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}

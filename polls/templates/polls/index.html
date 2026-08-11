@@ -5,6 +5,10 @@
     <title>Questions</title>
   </head>
   <body>
+    <form action="logout/" method="POST">
+		    {% csrf_token %}
+        <input type="submit" value="Logout"/>
+    </form>
     {% if latest_question_list %}
         <ul>
         {% for question in latest_question_list %}
