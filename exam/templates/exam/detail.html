@@ -9,7 +9,7 @@
         {% csrf_token %}
         <input type="submit" value="Logout"/>
       </form>
-      <form action="{% url 'polls:vote' question.id %}" method="POST">
+      <form action="{% url 'exam:vote' question.id %}" method="POST">
       {% csrf_token %}
       <fieldset>
           <legend><h1>{{ question.question_text }}</h1></legend>

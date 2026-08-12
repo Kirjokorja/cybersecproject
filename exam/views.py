@@ -11,12 +11,12 @@ from .models import Choice, Question
 def index(request):
     latest_question_list = Question.objects.order_by("-pub_date")[:5]
     context = {"latest_question_list": latest_question_list}
-    return render(request, "polls/index.html", context)
+    return render(request, "exam/index.html", context)
 
 @login_required
 def detail(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
-    return render(request, "polls/detail.html", {"question": question})
+    return render(request, "exam/detail.html", {"question": question})
 
 def register(request):
     if request.POST:
@@ -24,12 +24,12 @@ def register(request):
         if form.is_valid():
             form.save()
             return HttpResponseRedirect("login/")
-    return render(request, reverse("polls:register"), {"form": form})
+    return render(request, reverse("exam:register"), {"form": form})
 
 @login_required
 def results(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
-    return render(request, "polls/results.html", {"question": question})
+    return render(request, "exam/results.html", {"question": question})
 
 @login_required
 def vote(request, question_id):
@@ -39,7 +39,7 @@ def vote(request, question_id):
     except (KeyError, Choice.DoesNotExist):
         return render(
             request,
-            "polls/detail.html",
+            "exam/detail.html",
             {
                 "question": question,
                 "error_message": "You didn't select a choice.",
@@ -48,4 +48,4 @@ def vote(request, question_id):
     else:
         selected_choice.votes = F("votes") + 1
         selected_choice.save()
-        return HttpResponseRedirect(reverse("polls:results", args=(question.id,)))
+        return HttpResponseRedirect(reverse("exam:results", args=(question.id,)))
