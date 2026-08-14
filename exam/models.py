@@ -19,12 +19,8 @@ class Choice(models.Model):
 
 class Question(models.Model):
     question_text = models.CharField(max_length=200)
-    pub_date = models.DateTimeField("date published")
     answer = models.OneToOneField(Choice, null=True, on_delete=models.PROTECT)
     choices = models.ManyToManyField(Choice, related_query_name="questions")
 
     def __str__(self):
         return self.question_text
-    
-    def was_published_recently(self):
-        return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
