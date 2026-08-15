@@ -2,14 +2,18 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8" />
-    <title>Questions</title>
+    <title>Exam</title>
   </head>
   <body>
     <form action="logout/" method="POST">
 		    {% csrf_token %}
         <input type="submit" value="Logout"/>
     </form>
-    {% if latest_question_list %}
+    <form action="detail/" method="POST">
+		    {% csrf_token %}
+        <input type="submit" value="Start"/>
+    </form>
+    <!-- {% if latest_question_list %}
         <ul>
         {% for question in latest_question_list %}
             <li><a href="{% url 'exam:detail' question.id %}">{{ question.question_text }}</a></li>
@@ -17,6 +21,6 @@
         {% endfor %}
     {% else %}
         <p>No questions are available.</p>
-    {% endif %}
+    {% endif %} -->
   </body>
 </html>

@@ -2,21 +2,17 @@ from django.db.models import F
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django.views import generic
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from .models import Choice, Question
 
 @login_required
 def index(request):
-    latest_question_list = Question.objects.order_by("-pub_date")[:5]
-    context = {"latest_question_list": latest_question_list}
-    return render(request, "exam/index.html", context)
+    return render(request, "exam/index.html")
 
 @login_required
-def detail(request, question_id):
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, "exam/detail.html", {"question": question})
+def detail(request):
+    return render(request, "exam/detail.html")
 
 def register(request):
     if request.POST:
