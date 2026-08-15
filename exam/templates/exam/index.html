@@ -2,25 +2,27 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8" />
-    <title>Exam</title>
+    <title>Exams</title>
   </head>
   <body>
     <form action="logout/" method="POST">
 		    {% csrf_token %}
         <input type="submit" value="Logout"/>
     </form>
-    <form action="detail/" method="POST">
-		    {% csrf_token %}
-        <input type="submit" value="Start"/>
-    </form>
-    <!-- {% if latest_question_list %}
+    {% if latest_exam_list %}
         <ul>
-        {% for question in latest_question_list %}
-            <li><a href="{% url 'exam:detail' question.id %}">{{ question.question_text }}</a></li>
+        {% for exam in latest_exam_list %}
+            <li><form action="exam/" method="POST">
+                {% csrf_token %}
+                {{exam.name_text}}
+                <input type="hidden" name="exam_id" value="{{exam.id}}" />
+                <input type="hidden" name="question_counter" value="1" />
+                <input type="submit" value="Start"/>
+            </form></li>
         </ul>
         {% endfor %}
     {% else %}
-        <p>No questions are available.</p>
-    {% endif %} -->
+        <p>No exams are available.</p>
+    {% endif %}
   </body>
 </html>

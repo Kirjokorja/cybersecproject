@@ -4,15 +4,18 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from .models import Choice, Question
+from .models import Choice, Question, Exam
 
 @login_required
 def index(request):
-    return render(request, "exam/index.html")
+    latest_exam_list = Exam.objects.filter(participant=request.user)
+    context = {"latest_exam_list": latest_exam_list}
+    return render(request, "exam/index.html", context)
 
 @login_required
-def detail(request):
-    return render(request, "exam/detail.html")
+def exam(request):
+    questions = get_object_or_404(Exam, pk=request.POST.get("exam_id")).question_list.set()
+    return render(request, "exam/exam.html", {"question": questions[request.POST.get("question_counter")]})
 
 def register(request):
     if request.POST:
