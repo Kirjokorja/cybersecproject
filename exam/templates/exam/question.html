@@ -9,17 +9,19 @@
         {% csrf_token %}
         <input type="submit" value="Logout"/>
       </form>
-      <form action="{% url 'exam:vote' question.id %}" method="POST">
+      <form action="{% url 'exam:exam' %}" method="POST">
       {% csrf_token %}
       <fieldset>
           <legend><h1>{{ question.question_text }}</h1></legend>
           {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
-          {% for choice in question.choice_set.all %}
-              <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}">
+          {% for choice in question.choices %}
+              <input type="radio" name="choice_id" id="choice{{ forloop.counter }}" value="{{ choice.id }}">
               <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br>
           {% endfor %}
       </fieldset>
-    <input type="submit" value="Vote">
+      <input type="hidden" name="exam_id" value="{{ exam.id }}"/>
+      <input type="hidden" name="question_id" value="{{question.id}}"/>
+      <input type="submit" value="Submit">
     </form>
   </body>
 </html>

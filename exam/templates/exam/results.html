@@ -10,14 +10,13 @@
         <input type="submit" value="Logout"/>
     </form>
 
-    <h1>{{ question.question_text }}</h1>
+    <h1>{{ exam_results.name_text }}</h1>
 
     <ul>
-    {% for choice in question.choice_set.all %}
-        <li>{{ choice.choice_text }} -- {{ choice.votes }} vote{{ choice.votes|pluralize }}</li>
-    {% endfor %}
+        <li>Participant: {{ exam_results.participant }}</li>
+        <li>Points: {{ exam_results.points }}</li>
     </ul>
 
-    <a href="{% url 'exam:detail' question.id %}">Vote again?</a>
+    <a href="{% url 'exam:index' %}">Home</a>
   </body>
 </html>

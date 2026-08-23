@@ -1,11 +1,16 @@
-from django.urls import path
+from django.urls import include, path
 
 from . import views
 
 app_name = "exam"
+
+extra_patterns = [
+    path("", views.exam, name="exam"),
+    path("<int:exam_id>/question/<int:question_id>", views.question, name="question"),
+    path("<int:exam_id>/results/", views.results, name="results"),
+]
+
 urlpatterns = [
     path("", views.index, name="index"),
-    path("exam/", views.exam, name="exam"),
-    path("<int:question_id>/results/", views.results, name="results"),
-    path("<int:question_id>/vote/", views.vote, name="vote")
+    path("exam/", include(extra_patterns)),
 ]

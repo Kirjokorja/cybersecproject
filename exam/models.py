@@ -17,10 +17,10 @@ class Question(models.Model):
 
 class Exam(models.Model):
     name_text = models.CharField(max_length=200, default="Exam")
-    participant = models.OneToOneField(User, on_delete=models.CASCADE)
-    question_list = models.ManyToManyField(Question)
-    points = models.IntegerField()
-    taken = models.BooleanField()
+    participant = models.ForeignKey(User, on_delete=models.CASCADE)
+    questions = models.ManyToManyField(Question)
+    points = models.IntegerField(default=0)
+    progress = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name_text

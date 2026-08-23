@@ -9,15 +9,21 @@
 		    {% csrf_token %}
         <input type="submit" value="Logout"/>
     </form>
-    {% if latest_exam_list %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if exam_list %}
         <ul>
-        {% for exam in latest_exam_list %}
-            <li><form action="exam/" method="POST">
+        {% for exam in exam_list %}
+            <li><form action="{% url 'exam:exam' %}" method="POST">
                 {% csrf_token %}
                 {{exam.name_text}}
-                <input type="hidden" name="exam_id" value="{{exam.id}}" />
-                <input type="hidden" name="question_counter" value="1" />
-                <input type="submit" value="Start"/>
+                <input type="hidden" name="exam_id" value="{{ exam.id }}"/>
+                <input type="submit" value="Go"/>
             </form></li>
         </ul>
         {% endfor %}
