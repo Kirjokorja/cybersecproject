@@ -18,9 +18,15 @@ class Question(models.Model):
 class Exam(models.Model):
     name_text = models.CharField(max_length=200, default="Exam")
     participant = models.ForeignKey(User, on_delete=models.CASCADE)
-    questions = models.ManyToManyField(Question)
-    points = models.IntegerField(default=0)
     progress = models.IntegerField(default=0)
 
     def __str__(self):
-        return self.name_text
+            return self.name_text + "_" + self.participant.username
+
+class QuestionResult(models.Model):
+     exam = models.ForeignKey(Exam, models.CASCADE)
+     question = models.ForeignKey(Question, on_delete=models.PROTECT)
+     answered = models.IntegerField(default=-1)
+
+     def __str__(self):
+            return self.exam.participant.username + "_" + self.question.question_text

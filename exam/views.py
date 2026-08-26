@@ -5,13 +5,20 @@ from django.urls import reverse
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET, require_POST
-from .models import Choice, Question, Exam
+from .models import Choice, Question, Exam, QuestionResult
 
 def get_exam_context(exam):
     return {"id": exam.id, "name_text": exam.name_text}
 
+def count_points(results):
+    points = 0
+    for result in results:
+        points += result.answered
+    return points
+
 def get_exam_results(exam):
-    return {"id": exam.id, "name_text": exam.name_text, "participant": exam.participant, "points": exam.points}
+    points = count_points(exam.questionresult_set.all())
+    return {"id": exam.id, "name_text": exam.name_text, "participant": exam.participant, "points": points}
 
 def get_exam_question(question):
     choices = question.choices.all().union(Choice.objects.filter(pk=question.answer.id)).order_by("choice_text")
@@ -22,17 +29,12 @@ def get_exam_question(question):
     }
     return question_dict
 
-def update_progress(exam):
-    if len(exam.questions.all()) == exam.progress + 1:
-        exam.progress = -1
+def update_results(exam, question_result, question, choice):
+    if question.answer.id == choice.id:
+        question_result.answered = 1
     else:
-        exam.progress += 1
-    exam.save()
-
-def update_points(exam, question, choice):
-    if exam.questions.filter(id=question.id) and question.answer.id == choice.id:
-        exam.points += 1
-        exam.save()
+        question_result.answered = 0
+    question_result.save()
 
 @login_required
 def index(request):
@@ -48,17 +50,27 @@ def index(request):
 def exam(request):
     exam = get_object_or_404(Exam, pk=request.POST["exam_id"])
     if exam.participant != request.user:
-        messages.warning(request, "The logged in user is not the participant of this exam.")
+        messages.warning(request, "The logged in user was not the participant of the exam.")
     else:
-        if exam.questions:
+        if exam.progress == -1:
+            return redirect(reverse("exam:results", kwargs={"exam_id": exam.id}))
+        if exam.questionresult_set:
             if request.POST.__contains__("question_id") and request.POST.__contains__("choice_id"):
                 question = get_object_or_404(Question, pk=request.POST["question_id"])
-                choice = get_object_or_404(Choice, pk=request.POST["choice_id"])
-                update_points(exam, question, choice)
-                update_progress(exam)
-            if exam.progress == -1:
-                return redirect(reverse("exam:results", kwargs={"exam_id": exam.id}))
-            next_question = exam.questions.order_by("id")[exam.progress]
+                question_result =  exam.questionresult_set.filter(question__id=question.id)[0]
+                if not question_result:
+                    messages.warning(request, "This question is not part of the exam.")
+                    return redirect(reverse("exam:index"))
+                if question_result.answered == -1:
+                    choice = get_object_or_404(Choice, pk=request.POST["choice_id"])
+                    update_results(exam, question_result, question, choice)
+                    exam.progress += 1
+                    exam.save()
+                    if len(exam.questionresult_set.all()) == exam.progress:
+                        exam.progress = -1
+                        exam.save()
+                        return redirect(reverse("exam:results", kwargs={"exam_id": exam.id}))
+            next_question = exam.questionresult_set.all()[exam.progress].question
             return redirect(reverse("exam:question", kwargs={"exam_id": exam.id, "question_id": next_question.id}))
         messages.info(request, "The exam doesn't contain any questions.")
     return redirect(reverse("exam:index"))
@@ -84,19 +96,22 @@ def exam(request):
 def question(request, exam_id, question_id):
     exam = get_object_or_404(Exam, pk=exam_id)
     if exam.participant != request.user:
-        messages.warning(request, "The logged in user is not the participant of this exam.")
+        messages.warning(request, "The logged in user was not the participant of the exam.")
         return redirect(reverse("exam:index"))
     exam_dict = get_exam_context(exam)
-    question = get_object_or_404(Question, pk=question_id, exam=exam_id)
-    question_dict = get_exam_question(question)
-    return render(request, "exam/question.html", {"exam": exam_dict, "question": question_dict})
+    question_result = get_object_or_404(QuestionResult, exam__id=exam_id, question__id=question_id)
+    if question_result.answered == -1:
+        question_dict = get_exam_question(question_result.question)
+        return render(request, "exam/question.html", {"exam": exam_dict, "question": question_dict})
+    messages.warning(request, "The question has already been answered.")
+    return redirect(reverse("exam:index"))
 
 @login_required
 @require_GET
 def results(request, exam_id):
     exam = get_object_or_404(Exam, pk=exam_id)
     if exam.participant != request.user:
-        messages.warning(request, "The logged in user is not the participant of this exam.")
+        messages.warning(request, "The logged in user was not the participant of the exam.")
         return redirect(reverse("exam:index"))
     exam_results = get_exam_results(exam)
     return render(request, "exam/results.html", {"exam_results": exam_results})
