@@ -29,7 +29,7 @@ def get_exam_question(question):
     }
     return question_dict
 
-def update_results(exam, question_result, question, choice):
+def update_results(question_result, question, choice):
     if question.answer.id == choice.id:
         question_result.answered = 1
     else:
@@ -50,7 +50,7 @@ def index(request):
 def exam(request):
     exam = get_object_or_404(Exam, pk=request.POST["exam_id"])
     if exam.participant != request.user:
-        messages.warning(request, "The logged in user was not the participant of the exam.")
+        messages.warning(request, "The logged in user is not the participant of the exam.")
     else:
         if exam.progress == -1:
             return redirect(reverse("exam:results", kwargs={"exam_id": exam.id}))
@@ -63,7 +63,7 @@ def exam(request):
                     return redirect(reverse("exam:index"))
                 if question_result.answered == -1:
                     choice = get_object_or_404(Choice, pk=request.POST["choice_id"])
-                    update_results(exam, question_result, question, choice)
+                    update_results(question_result, question, choice)
                     exam.progress += 1
                     exam.save()
                     if len(exam.questionresult_set.all()) == exam.progress:
@@ -96,7 +96,7 @@ def exam(request):
 def question(request, exam_id, question_id):
     exam = get_object_or_404(Exam, pk=exam_id)
     if exam.participant != request.user:
-        messages.warning(request, "The logged in user was not the participant of the exam.")
+        messages.warning(request, "The logged in user is not the participant of the exam.")
         return redirect(reverse("exam:index"))
     exam_dict = get_exam_context(exam)
     question_result = get_object_or_404(QuestionResult, exam__id=exam_id, question__id=question_id)
