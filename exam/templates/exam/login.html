@@ -5,6 +5,9 @@
     <title>Login</title>
   </head>
   <body>
+    <form action="/register/" method="GET">
+      <input type="submit" value="Register"/>
+    </form>
     <h2>Login</h2>
     <form method="POST">
       {% csrf_token %}

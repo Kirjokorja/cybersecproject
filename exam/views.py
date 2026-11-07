@@ -128,10 +128,7 @@ def results(request, exam_id):
     exam_results = get_exam_results(exam)
     return render(request, "exam/results.html", {"exam_results": exam_results})
 
-# def register(request):
-#     if request.POST:
-#         form = UserCreationForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             return HttpResponseRedirect("login/")
-#     return render(request, reverse("exam:register"), {"form": form})
+class RegisterView(View):
+
+    def get(self, request):
+        return render(request, reverse("exam:register"))

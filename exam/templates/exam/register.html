@@ -6,10 +6,20 @@
   </head>
   <body>
     <h2>Create user</h2>
-    <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Create</button>
+    <form action="/register/" method="POST">
+      <p>
+        Username: <br />
+        <input type="text" name="username" />
+      </p>
+      <p>
+        Password: <br />
+        <input type="password" name="password" />
+      </p>
+      <p>
+        Confirm password: <br />
+        <input type="password" name="password_confirm" />
+      </p>
+      <button type="submit">Create</button>
     </form>
   </body>
 </html>
