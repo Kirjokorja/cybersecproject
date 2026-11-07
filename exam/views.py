@@ -92,29 +92,13 @@ class ExamView(View):
         logger.info(f"Exam {request.POST["exam_id"]} doesn't contain any questions.")
         return redirect(reverse("exam:index"))
 
-# def exam(request):
-#     exam = Exam.objects.get(Exam, pk=request.POST.get("exam_id"))
-#     if exam.participant != request.user:
-#         messages.error(request, "The logged in user is not the participant of this exam.")
-#         return render(request, "exam/index.html")
-#     if exam.progress > -1:
-#         if exam.question_list:
-#             counter = exam.progress
-#             question = exam.question_list[request.POST.get(exam.progress)]
-#             exam.progress += 1
-#             exam.save()
-#             return redirect(request, "exam/exam.html", {"exam": exam, "question": question, "counter": counter})
-#         else:
-#             messages.info(request, "The exam doesn't contain any questions.")
-#             return render(request, "exam/index.html")
-#
 @login_required
 @require_GET
 def question(request, exam_id, question_id):
     try:
-        exam = Exam.objects.get(pk=request.POST["exam_id"], participant=request.user)
+        exam = Exam.objects.get(pk=exam_id, participant=request.user)
     except ObjectDoesNotExist:
-        logger_sec.warning(f"Exam can not be found with id {request.POST["exam_id"]} for participant {request.user}.")
+        logger_sec.warning(f"Exam can not be found with id {exam_id} for participant {request.user}.")
         return redirect(reverse("exam:index"))
     exam_dict = get_exam_context(exam)
     question_result = QuestionResult.objects.get(exam__id=exam_id, question__id=question_id)
@@ -130,11 +114,13 @@ def question(request, exam_id, question_id):
 def results(request, exam_id):
     try:
         exam = Exam.objects.get(pk=exam_id)
-        # fix for flaw 1. Broken Access Control
-        # exam = Exam.objects.get(pk=exam_id, participant=request.user)
     except ObjectDoesNotExist:
-        logger_sec.warning(f"Exam can not be found with id {request.POST["exam_id"]} for participant {request.user}.")
+        logger_sec.warning(f"Exam can not be found with id {"exam_id"}.")
         return redirect(reverse("exam:index"))
+    # fix for flaw 1. Broken Access Control
+    # if exam.participant is not request.user:
+    #     logger_sec.warning(f"The user {request.user} is not the participant of exam {exam_id}.")
+    #     return redirect(reverse("exam:index"))
     if exam.progress != -1:
         logger.info("The exam has not been taken yet.")
         messages.info(request, "The exam has not been taken yet.")

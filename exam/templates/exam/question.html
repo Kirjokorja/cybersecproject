@@ -5,6 +5,7 @@
     <title>Question</title>
   </head>
     <body>
+      <p>You are logged in as {{user.username}}.</p>
       <form action="/logout/" method="POST">
         {% csrf_token %}
         <input type="submit" value="Logout"/>
@@ -13,7 +14,6 @@
       {% csrf_token %}
       <fieldset>
           <legend><h1>{{ question.question_text }}</h1></legend>
-          {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
           {% for choice in question.choices %}
               <input type="radio" name="choice_id" id="choice{{ forloop.counter }}" value="{{ choice.id }}">
               <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br>
