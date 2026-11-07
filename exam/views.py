@@ -1,11 +1,18 @@
+import logging
 from django.db.models import F
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.urls import reverse
+from django.views import View
+from django.core.exceptions import ObjectDoesNotExist, SuspiciousOperation
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_GET, require_POST
 from .models import Choice, Question, Exam, QuestionResult
+
+logger = logging.getLogger("django")
+logger_sec = logging.getLogger("django.security")
 
 def get_exam_context(exam):
     return {"id": exam.id, "name_text": exam.name_text}
@@ -45,24 +52,34 @@ def index(request):
         exam_list.append(exam_dict)
     return render(request, "exam/index.html", {"exam_list": exam_list})
 
-@login_required
-@require_POST
-def exam(request):
-    exam = get_object_or_404(Exam, pk=request.POST["exam_id"])
-    if exam.participant != request.user:
-        messages.warning(request, "The logged in user is not the participant of the exam.")
-    else:
+@method_decorator(login_required, name="dispatch")
+class ExamView(View):
+
+    def get(self, request):
+        return redirect(reverse("exam:index"))
+
+    def post(self, request):
+        try:
+            exam = Exam.objects.get(pk=request.POST["exam_id"], participant=request.user)
+        except ObjectDoesNotExist:
+            logger_sec.warning(f"Exam can not be found with id {request.POST["exam_id"]} for participant {request.user}.")
+            return redirect(reverse("exam:index"))
         if exam.progress == -1:
             return redirect(reverse("exam:results", kwargs={"exam_id": exam.id}))
         if exam.questionresult_set:
             if request.POST.__contains__("question_id") and request.POST.__contains__("choice_id"):
-                question = get_object_or_404(Question, pk=request.POST["question_id"])
-                question_result =  exam.questionresult_set.filter(question__id=question.id)[0]
-                if not question_result:
-                    messages.warning(request, "This question is not part of the exam.")
+                try:
+                    question = Question.objects.get(pk=request.POST["question_id"])
+                    question_result =  exam.questionresult_set.get(question__id=question.id)
+                except ObjectDoesNotExist:
+                    logger.info(f"Question with id {request.POST["question_id"]} does not exist.")
                     return redirect(reverse("exam:index"))
                 if question_result.answered == -1:
-                    choice = get_object_or_404(Choice, pk=request.POST["choice_id"])
+                    try:
+                        choice = Choice.objects.get(pk=request.POST["choice_id"])
+                    except ObjectDoesNotExist:
+                        logger.info(f"Choice with id {request.POST["choice_id"]} does not exist.")
+                        return redirect(reverse("exam:index"))
                     update_results(question_result, question, choice)
                     exam.progress += 1
                     exam.save()
@@ -72,8 +89,8 @@ def exam(request):
                         return redirect(reverse("exam:results", kwargs={"exam_id": exam.id}))
             next_question = exam.questionresult_set.all()[exam.progress].question
             return redirect(reverse("exam:question", kwargs={"exam_id": exam.id, "question_id": next_question.id}))
-        messages.info(request, "The exam doesn't contain any questions.")
-    return redirect(reverse("exam:index"))
+        logger.info(f"Exam {request.POST["exam_id"]} doesn't contain any questions.")
+        return redirect(reverse("exam:index"))
 
 # def exam(request):
 #     exam = Exam.objects.get(Exam, pk=request.POST.get("exam_id"))
@@ -94,24 +111,33 @@ def exam(request):
 @login_required
 @require_GET
 def question(request, exam_id, question_id):
-    exam = get_object_or_404(Exam, pk=exam_id)
-    if exam.participant != request.user:
-        messages.warning(request, "The logged in user is not the participant of the exam.")
+    try:
+        exam = Exam.objects.get(pk=request.POST["exam_id"], participant=request.user)
+    except ObjectDoesNotExist:
+        logger_sec.warning(f"Exam can not be found with id {request.POST["exam_id"]} for participant {request.user}.")
         return redirect(reverse("exam:index"))
     exam_dict = get_exam_context(exam)
-    question_result = get_object_or_404(QuestionResult, exam__id=exam_id, question__id=question_id)
+    question_result = QuestionResult.objects.get(exam__id=exam_id, question__id=question_id)
     if question_result.answered == -1:
         question_dict = get_exam_question(question_result.question)
         return render(request, "exam/question.html", {"exam": exam_dict, "question": question_dict})
-    messages.warning(request, "The question has already been answered.")
+    logger.info("The question has already been answered.")
+    messages.info(request, "The question has already been answered.")
     return redirect(reverse("exam:index"))
 
 @login_required
 @require_GET
 def results(request, exam_id):
-    exam = get_object_or_404(Exam, pk=exam_id)
-    if exam.participant != request.user:
-        messages.warning(request, "The logged in user was not the participant of the exam.")
+    try:
+        exam = Exam.objects.get(pk=exam_id)
+        # fix for flaw 1. Broken Access Control
+        # exam = Exam.objects.get(pk=exam_id, participant=request.user)
+    except ObjectDoesNotExist:
+        logger_sec.warning(f"Exam can not be found with id {request.POST["exam_id"]} for participant {request.user}.")
+        return redirect(reverse("exam:index"))
+    if exam.progress != -1:
+        logger.info("The exam has not been taken yet.")
+        messages.info(request, "The exam has not been taken yet.")
         return redirect(reverse("exam:index"))
     exam_results = get_exam_results(exam)
     return render(request, "exam/results.html", {"exam_results": exam_results})

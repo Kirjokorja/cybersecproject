@@ -24,9 +24,9 @@ class Exam(models.Model):
             return self.name_text + "_" + self.participant.username
 
 class QuestionResult(models.Model):
-     exam = models.ForeignKey(Exam, models.CASCADE)
-     question = models.ForeignKey(Question, on_delete=models.PROTECT)
-     answered = models.IntegerField(default=-1)
+    exam = models.ForeignKey(Exam, models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.PROTECT)
+    answered = models.IntegerField(default=-1)
 
-     def __str__(self):
-            return self.exam.participant.username + "_" + self.question.question_text
+    def __str__(self):
+        return self.exam.participant.username + "_" + self.question.question_text
