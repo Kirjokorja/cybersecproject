@@ -1,5 +1,5 @@
 from django.urls import include, path
-from exam.views import ExamView, RegisterView
+from exam.views import ExamView, RegisterUserView
 
 from . import views
 
@@ -14,6 +14,6 @@ extra_patterns = [
 
 urlpatterns = [
     path("", views.index, name="index"),
-    path("register/", RegisterView.as_view(), name="register"),
+    path("register-user/", RegisterUserView.as_view(), name="register-user"),
     path("exam/", include(extra_patterns)),
 ]

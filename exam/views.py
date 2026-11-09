@@ -4,12 +4,13 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.urls import reverse
 from django.views import View
-from django.core.exceptions import ObjectDoesNotExist, SuspiciousOperation
-from django.contrib.auth.forms import UserCreationForm
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.views.decorators.http import require_GET, require_POST
-from .models import Choice, Question, Exam, QuestionResult
+from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt
+from .models import Choice, Question, Exam, QuestionResult, User
+from .forms import RegistrationForm
 
 logger = logging.getLogger("django")
 logger_sec = logging.getLogger("django.security")
@@ -128,7 +129,21 @@ def results(request, exam_id):
     exam_results = get_exam_results(exam)
     return render(request, "exam/results.html", {"exam_results": exam_results})
 
-class RegisterView(View):
+@method_decorator(csrf_exempt, name="dispatch")
+class RegisterUserView(View):
 
     def get(self, request):
-        return render(request, reverse("exam:register"))
+        context = {}
+        context['form'] = RegistrationForm()
+        return render(request, "exam/register_user.html", context)
+
+    def post(self, request):
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            User.objects.create_user(username=form.data["username"], password=form.data["password1"])
+            messages.info(request, "The user has been created successfuly.")
+            return redirect(reverse("exam:index"))
+        for error in form.errors.keys():
+            logger.info(f"{error}: {form.errors[error][0]}")
+            messages.info(request, f"{error}: {form.errors[error][0]}")
+        return redirect(reverse("exam:register-user"))

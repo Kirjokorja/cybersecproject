@@ -5,9 +5,16 @@
     <title>Login</title>
   </head>
   <body>
-    <form action="/register/" method="GET">
+    <form action="/register-user/" method="GET">
       <input type="submit" value="Register"/>
     </form>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
     <h2>Login</h2>
     <form method="POST">
       {% csrf_token %}
