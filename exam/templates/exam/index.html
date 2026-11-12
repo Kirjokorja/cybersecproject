@@ -22,12 +22,12 @@
         {% for exam in exam_list %}
             <li><form action="{% url 'exam:exam' %}" method="POST">
                 {% csrf_token %}
-                {{exam.name_text}}
+                {{exam.name}}
                 <input type="hidden" name="exam_id" value="{{ exam.id }}"/>
                 <input type="submit" value="Go"/>
             </form></li>
-        </ul>
         {% endfor %}
+        </ul>
     {% else %}
         <p>No exams are available.</p>
     {% endif %}

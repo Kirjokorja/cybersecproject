@@ -16,17 +16,16 @@ class Question(models.Model):
             return self.question_text
 
 class Exam(models.Model):
-    name_text = models.CharField(max_length=200, default="Exam")
-    participant = models.ForeignKey(User, on_delete=models.CASCADE)
-    progress = models.IntegerField(default=0)
+    name = models.CharField(max_length=200, default="Exam")
 
     def __str__(self):
-            return self.name_text + "_" + self.participant.username
+            return self.name
 
-class QuestionResult(models.Model):
-    exam = models.ForeignKey(Exam, models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.PROTECT)
+class Results(models.Model):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    participant = models.ForeignKey(User, on_delete=models.CASCADE)
     answered = models.IntegerField(default=-1)
 
     def __str__(self):
-        return self.exam.participant.username + "_" + self.question.question_text
+        return self.participant.username + "_" + self.exam.name + "_" + self.question.question_text
