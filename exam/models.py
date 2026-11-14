@@ -17,14 +17,15 @@ class Question(models.Model):
 
 class Exam(models.Model):
     name = models.CharField(max_length=200, default="Exam")
+    questions = models.ManyToManyField(Question)
 
     def __str__(self):
             return self.name
 
-class Results(models.Model):
+class Result(models.Model):
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
     participant = models.ForeignKey(User, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
     answered = models.IntegerField(default=-1)
 
     def __str__(self):

@@ -12,19 +12,30 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import secrets
+import os
+from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = secrets.token_hex(32)
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+# SECURITY WARNING: keep the secret key used in production secret!
+if DEBUG == True:   
+    SECRET_KEY = secrets.token_hex(32)
+else:
+    env_path = os.path.join(BASE_DIR, ".env")
+    if not Path(env_path).exists():
+        raise ImproperlyConfigured(f"'.env' file is missing.")
+    load_dotenv(dotenv_path=env_path)
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    if SECRET_KEY == None:
+        raise ImproperlyConfigured(f"'.env' file is missing 'SECRET_KEY' variable. Make sure the secret key is generated securely.")
 
 ALLOWED_HOSTS = ["127.0.0.1"]
 

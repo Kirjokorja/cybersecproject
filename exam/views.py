@@ -9,12 +9,13 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_GET
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate, login, logout
 from django.db import connection
-from .models import Choice, Exam, Results
-from .forms import RegistrationForm
+from django.contrib.auth.models import User
+from .models import Choice, Exam, Result
+from .forms import RegistrationForm, AuthenticationForm
 
 logger = logging.getLogger("django")
-logger_sec = logging.getLogger("django.security")
 
 def get_exam_context(exam):
     return {"id": exam.id, "name": exam.name}
@@ -27,7 +28,8 @@ def count_points(results):
 
 def get_exam_results(results):
     points = count_points(results)
-    return {"id": results.exam.id, "exam_name": results.exam.name, "participant": results.participant, "points": points}
+    result = results[0]
+    return {"id": result.exam.id, "name": result.exam.name, "participant": result.participant.username, "points": points}
 
 def get_exam_question(question):
     choices = question.choices.all().union(Choice.objects.filter(pk=question.answer.id)).order_by("choice_text")
@@ -46,8 +48,9 @@ def update_result(result, choice):
     result.save()
 
 @login_required
+@require_GET
 def index(request):
-    exams = Exam.objects.filter(results__participant=request.user).distinct()
+    exams = Exam.objects.filter(result__participant=request.user).distinct()
     exam_list = []
     for exam in exams:
         exam_dict = get_exam_context(exam)
@@ -61,7 +64,7 @@ class ExamView(View):
         return redirect(reverse("exam:index"))
 
     def post(self, request):
-        results = Results.objects.filter(exam=request.POST["exam_id"], participant=request.user)
+        results = Result.objects.filter(exam=request.POST["exam_id"], participant=request.user)
         if results:
             progress = results.filter(answered = -1)
             if not progress:
@@ -90,7 +93,7 @@ class ExamView(View):
 @require_GET
 def question(request, exam_id, question_id):
     try:
-        result = Results.objects.get(exam=exam_id, participant=request.user, question=question_id)
+        result = Result.objects.get(exam=exam_id, participant=request.user, question=question_id)
     except ObjectDoesNotExist:
         logger.error(f"Question {question_id} does not exist in results of exam {exam_id} for participant {request.user} or it has already been answered.")
         return redirect(reverse("exam:index"))
@@ -105,14 +108,17 @@ def question(request, exam_id, question_id):
 @login_required
 @require_GET
 def results(request, exam_id):
-    results = Results.objects.filter(exam=exam_id, participant=request.user, answered = -1)
-    progress = results.filter(answered = -1)
-    if progress:
-        logger.info(f"Exam {"exam_id"} has not been taken yet.")
-        messages.info(request, "The exam has not been taken yet.")
-        return redirect(reverse("exam:index"))
-    exam_results = get_exam_results(results)
-    return render(request, "exam/results.html", {"exam_results": exam_results})
+    results = Result.objects.filter(exam=exam_id, participant=request.user)
+    if results:
+        progress = results.filter(answered = -1)
+        if progress:
+            logger.info(f"Exam {"exam_id"} has not been taken yet.")
+            messages.info(request, "The exam has not been taken yet.")
+            return redirect(reverse("exam:index"))
+        exam_results = get_exam_results(results)
+        return render(request, "exam/results.html", {"exam_results": exam_results})
+    logger.error(f"Exam {exam_id} does not have any results for user {request.user} or the exam does not exist.")
+    return redirect(reverse("exam:index"))
 
 @method_decorator(csrf_exempt, name="dispatch")
 class RegisterUserView(View):
@@ -125,9 +131,10 @@ class RegisterUserView(View):
     def post(self, request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
+            sql = "INSERT INTO auth_user (username, password, is_superuser, last_name, email, is_staff, is_active, date_joined, first_name) VALUES('" + form.data["username"] + "', '" + form.data["password1"] + "', 0, '', '', 0, 1, datetime(), '')"
             with connection.cursor() as cursor:
-                cursor.execute("INSERT INTO auth_user (username, password, is_superuser, last_name, email, is_staff, is_active, date_joined, first_name) VALUES('" + form.data["username"] + "', '" + form.data["password1"] + "', 0, '', '', 0, 1, datetime(), '')")
-            # User.objects.create_user(username=form.data["username"], password=form.data["password1"])
+                cursor.execute(sql)
+            # form.save()
             messages.info(request, "The user has been created successfuly.")
             return redirect(reverse("exam:index"))
         for error in form.errors.keys():
@@ -135,22 +142,37 @@ class RegisterUserView(View):
             messages.info(request, f"{error}: {form.errors[error][0]}")
         return redirect(reverse("exam:register-user"))
 
-# class LoginView(View):
+class LoginView(View):
 
-#     def get(self, request):
-#         context = {}
-#         context['form'] = RegistrationForm()
-#         return render(request, "exam/register_user.html", context)
+    def get(self, request):
+        context = {}
+        context['form'] = AuthenticationForm()
+        return render(request, "exam/login.html", context)
 
-#     def post(self, request):
-#         form = RegistrationForm(request.POST)
-#         if form.is_valid():
-#             with connection.cursor() as cursor:
-#                 cursor.execute("INSERT INTO auth_user (username, password, is_superuser, last_name, email, is_staff, is_active, date_joined, first_name) VALUES('" + form.data["username"] + "', '" + form.data["password1"] + "', 0, '', '', 0, 1, datetime(), '')")
-#             # User.objects.create_user(username=form.data["username"], password=form.data["password1"])
-#             messages.info(request, "The user has been created successfuly.")
-#             return redirect(reverse("exam:index"))
-#         for error in form.errors.keys():
-#             logger.info(f"{error}: {form.errors[error][0]}")
-#             messages.info(request, f"{error}: {form.errors[error][0]}")
-#         return redirect(reverse("exam:register-user"))
+    def post(self, request):
+        username = request.POST["username"]
+        password = request.POST["password"]
+        sql = "SELECT id, password FROM auth_user WHERE username = %s"
+        result = None
+        with connection.cursor() as cursor:
+            print(username)
+            result = cursor.execute(sql, [username]).fetchall()
+        if result:
+            user_id = result[0][0]
+            user_password = result[0][1]
+            if password == user_password:
+                login(request, User.objects.get(pk=user_id))
+                return redirect(reverse("exam:index"))
+        # form = AuthenticationForm(request.POST)
+        # if form.is_valid():
+        #     login(request, form.get_user())
+        #     return redirect(reverse("exam:index"))
+        # for error in form.errors.keys():
+        #     logger.info(f"{error}: {form.errors[error][0]}")
+        #     messages.info(request, f"{error}: {form.errors[error][0]}")
+        messages.info(request, f"Invalid credentials.")
+        return redirect(reverse("exam:login"))
+
+def logout_view(request):
+    logout(request)
+    return redirect(reverse("exam:index"))

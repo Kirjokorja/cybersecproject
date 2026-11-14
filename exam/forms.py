@@ -1,6 +1,6 @@
 from django import forms
 from django.core.validators import MinLengthValidator
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 class RegistrationForm(UserCreationForm):
     username = forms.CharField(
@@ -18,3 +18,13 @@ class RegistrationForm(UserCreationForm):
         widget=forms.PasswordInput(),
         validators=[MinLengthValidator(8)]
     )
+
+# class LoginForm(AuthenticationForm):
+#     username = forms.CharField(
+#         label = "Username",
+#         max_length=50
+#     )
+#     password = forms.CharField(
+#         label = "Password",
+#         widget=forms.PasswordInput()
+#     )
