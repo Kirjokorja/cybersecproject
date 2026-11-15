@@ -1,6 +1,7 @@
 from django.db import models
 from django.apps import apps
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.hashers import make_password, check_password
 
 class CustomUserManager(BaseUserManager):
 
@@ -44,6 +45,8 @@ class User(AbstractUser):
 
     def set_password(self, raw_password):
         self.password = raw_password
+        # password hashing
+        # self.password = make_password(raw_password)
         self._password = raw_password
 
     def check_password(self, raw_password):
@@ -53,7 +56,9 @@ class User(AbstractUser):
             # Password hash upgrades shouldn't be considered password changes.
             self._password = None
             self.save(update_fields=["password"])
-        
+
+        # password check
+        # return check_password(raw_password, self.password, setter)
         if raw_password == self.password:
             return True
         return False
