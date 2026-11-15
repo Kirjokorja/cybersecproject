@@ -20,6 +20,9 @@ logger = logging.getLogger("django")
 def get_exam_context(exam):
     return {"id": exam.id, "name": exam.name}
 
+def get_exam_context_list(exam):
+    return {"id": exam[0], "name": exam[1]}
+
 def count_points(results):
     points = 0
     for result in results:
@@ -50,10 +53,31 @@ def update_result(result, choice):
 @login_required
 @require_GET
 def index(request):
-    exams = Exam.objects.filter(result__participant=request.user).distinct()
+    exams = None
+    query = "%%"
+    if request.GET.__contains__("query"):
+        query = "%" + request.GET["query"] + "%"
+    sql = """SELECT DISTINCT exam_exam.id,
+                            exam_exam.name 
+                    FROM exam_exam, exam_result 
+                    WHERE exam_result.participant_id = """ + str(request.user.id) + """ 
+                    AND exam_exam.id = exam_result.exam_id 
+                    AND exam_exam.name LIKE '""" + query + """'
+            """
+    #FLAW 3: Injection
+    # sql = """SELECT DISTINCT exam_exam.id,
+    #                         exam_exam.name 
+    #                 FROM exam_exam, exam_result 
+    #                 WHERE exam_result.participant_id = %s 
+    #                 AND exam_exam.id = exam_result.exam_id 
+    #                 AND exam_exam.name LIKE %s
+    #         """
+    with connection.cursor() as cursor:
+        exams = cursor.execute(sql).fetchall()
+        # exams = cursor.execute(sql, [request.user.id, query]).fetchall()
     exam_list = []
     for exam in exams:
-        exam_dict = get_exam_context(exam)
+        exam_dict = get_exam_context_list(exam)
         exam_list.append(exam_dict)
     return render(request, "exam/index.html", {"exam_list": exam_list})
 
@@ -131,10 +155,10 @@ class RegisterUserView(View):
     def post(self, request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            sql = "INSERT INTO auth_user (username, password, is_superuser, last_name, email, is_staff, is_active, date_joined, first_name) VALUES('" + form.data["username"] + "', '" + form.data["password1"] + "', 0, '', '', 0, 1, datetime(), '')"
-            with connection.cursor() as cursor:
-                cursor.execute(sql)
-            # form.save()
+            # sql = "INSERT INTO auth_user (username, password, is_superuser, last_name, email, is_staff, is_active, date_joined, first_name) VALUES('" + form.data["username"] + "', '" + form.data["password1"] + "', 0, '', '', 0, 1, datetime(), '')"
+            # with connection.cursor() as cursor:
+            #     cursor.execute(sql)
+            form.save()
             messages.info(request, "The user has been created successfuly.")
             return redirect(reverse("exam:index"))
         for error in form.errors.keys():
@@ -142,37 +166,37 @@ class RegisterUserView(View):
             messages.info(request, f"{error}: {form.errors[error][0]}")
         return redirect(reverse("exam:register-user"))
 
-class LoginView(View):
+# class LoginView(View):
 
-    def get(self, request):
-        context = {}
-        context['form'] = AuthenticationForm()
-        return render(request, "exam/login.html", context)
+#     def get(self, request):
+#         context = {}
+#         context['form'] = AuthenticationForm()
+#         return render(request, "exam/login.html", context)
 
-    def post(self, request):
-        username = request.POST["username"]
-        password = request.POST["password"]
-        sql = "SELECT id, password FROM auth_user WHERE username = %s"
-        result = None
-        with connection.cursor() as cursor:
-            print(username)
-            result = cursor.execute(sql, [username]).fetchall()
-        if result:
-            user_id = result[0][0]
-            user_password = result[0][1]
-            if password == user_password:
-                login(request, User.objects.get(pk=user_id))
-                return redirect(reverse("exam:index"))
-        # form = AuthenticationForm(request.POST)
-        # if form.is_valid():
-        #     login(request, form.get_user())
-        #     return redirect(reverse("exam:index"))
-        # for error in form.errors.keys():
-        #     logger.info(f"{error}: {form.errors[error][0]}")
-        #     messages.info(request, f"{error}: {form.errors[error][0]}")
-        messages.info(request, f"Invalid credentials.")
-        return redirect(reverse("exam:login"))
+#     def post(self, request):
+#         username = request.POST["username"]
+#         password = request.POST["password"]
+#         sql = "SELECT id, password FROM auth_user WHERE username = %s"
+#         result = None
+#         with connection.cursor() as cursor:
+#             print(username)
+#             result = cursor.execute(sql, [username]).fetchall()
+#         if result:
+#             user_id = result[0][0]
+#             user_password = result[0][1]
+#             if password == user_password:
+#                 login(request, User.objects.get(pk=user_id))
+#                 return redirect(reverse("exam:index"))
+#         # form = AuthenticationForm(request.POST)
+#         # if form.is_valid():
+#         #     login(request, form.get_user())
+#         #     return redirect(reverse("exam:index"))
+#         # for error in form.errors.keys():
+#         #     logger.info(f"{error}: {form.errors[error][0]}")
+#         #     messages.info(request, f"{error}: {form.errors[error][0]}")
+#         messages.info(request, f"Invalid credentials.")
+#         return redirect(reverse("exam:login"))
 
-def logout_view(request):
-    logout(request)
-    return redirect(reverse("exam:index"))
+# def logout_view(request):
+#     logout(request)
+#     return redirect(reverse("exam:index"))

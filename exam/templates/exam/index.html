@@ -10,6 +10,17 @@
 		    {% csrf_token %}
         <input type="submit" value="Logout"/>
     </form>
+    <p>
+        <h3>Search</h3>
+        <form action="/" method="GET">
+            <p>
+            <label for="query">Query</label>:
+            <input type="text" name="query" id="query" value="{{ query }}"/>
+            </p>
+            <input type="submit" value="Send"/>
+        </form>
+    </p>
+
     {% if messages %}
     <ul class="messages">
         {% for message in messages %}
@@ -18,6 +29,7 @@
     </ul>
     {% endif %}
     {% if exam_list %}
+        <h3>Exams</h3>
         <ul>
         {% for exam in exam_list %}
             <li><form action="{% url 'exam:exam' %}" method="POST">
