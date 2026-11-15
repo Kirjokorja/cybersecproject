@@ -1,5 +1,62 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.apps import apps
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+
+class CustomUserManager(BaseUserManager):
+
+    def _create_any_user(self, username, email, password, **extra_fields):
+        if not username:
+            raise ValueError("The given username must be set")
+        email = self.normalize_email(email)
+        GlobalUserModel = apps.get_model(
+            self.model._meta.app_label, self.model._meta.object_name
+        )
+        username = GlobalUserModel.normalize_username(username)
+        user = self.model(username=username, email=email, **extra_fields)
+        user.password = password
+
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, username, email=None, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+
+        return self._create_any_user(username, email, password, **extra_fields)
+
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return self._create_any_user(username, email, password, **extra_fields)
+
+
+class User(AbstractUser):
+    # def __init__(self):
+    #     super().__init__()
+
+    objects = CustomUserManager()
+
+    def set_password(self, raw_password):
+        self.password = raw_password
+        self._password = raw_password
+
+    def check_password(self, raw_password):
+
+        def setter(raw_password):
+            self.set_password(raw_password)
+            # Password hash upgrades shouldn't be considered password changes.
+            self._password = None
+            self.save(update_fields=["password"])
+        
+        if raw_password == self.password:
+            return True
+        return False
 
 class Choice(models.Model):
     choice_text = models.CharField(max_length=200)

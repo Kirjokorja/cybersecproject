@@ -11,9 +11,10 @@ from django.views.decorators.http import require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout
 from django.db import connection
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
+from django.contrib.auth.forms import AuthenticationForm
 from .models import Choice, Exam, Result
-from .forms import RegistrationForm, AuthenticationForm
+from .forms import RegistrationForm
 
 logger = logging.getLogger("django")
 
@@ -131,10 +132,10 @@ class RegisterUserView(View):
     def post(self, request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            sql = "INSERT INTO auth_user (username, password, is_superuser, last_name, email, is_staff, is_active, date_joined, first_name) VALUES('" + form.data["username"] + "', '" + form.data["password1"] + "', 0, '', '', 0, 1, datetime(), '')"
-            with connection.cursor() as cursor:
-                cursor.execute(sql)
-            # form.save()
+            # sql = "INSERT INTO auth_user (username, password, is_superuser, last_name, email, is_staff, is_active, date_joined, first_name) VALUES('" + form.data["username"] + "', '" + form.data["password1"] + "', 0, '', '', 0, 1, datetime(), '')"
+            # with connection.cursor() as cursor:
+            #     cursor.execute(sql)
+            form.save()
             messages.info(request, "The user has been created successfuly.")
             return redirect(reverse("exam:index"))
         for error in form.errors.keys():
@@ -150,27 +151,29 @@ class LoginView(View):
         return render(request, "exam/login.html", context)
 
     def post(self, request):
-        username = request.POST["username"]
-        password = request.POST["password"]
-        sql = "SELECT id, password FROM auth_user WHERE username = %s"
-        result = None
-        with connection.cursor() as cursor:
-            print(username)
-            result = cursor.execute(sql, [username]).fetchall()
-        if result:
-            user_id = result[0][0]
-            user_password = result[0][1]
-            if password == user_password:
-                login(request, User.objects.get(pk=user_id))
-                return redirect(reverse("exam:index"))
-        # form = AuthenticationForm(request.POST)
-        # if form.is_valid():
-        #     login(request, form.get_user())
-        #     return redirect(reverse("exam:index"))
-        # for error in form.errors.keys():
-        #     logger.info(f"{error}: {form.errors[error][0]}")
-        #     messages.info(request, f"{error}: {form.errors[error][0]}")
-        messages.info(request, f"Invalid credentials.")
+        # username = request.POST["username"]
+        # password = request.POST["password"]
+        # # sql = "SELECT id, password FROM auth_user WHERE username = %s"
+        # # result = None
+        # # with connection.cursor() as cursor:
+        # #     result = cursor.execute(sql, [username]).fetchall()
+        # sql = "SELECT * FROM auth_user WHERE username = %s"
+        # user = User.objects.raw(sql, [username])
+        # if user:
+        #     # user_id = result[0][0]
+        #     # user_password = result[0][1]
+        #     if password == user[0].password:
+        #         login(request, User.objects.get(pk=user[0].id))
+        #         return redirect(reverse("exam:index"))
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect(reverse("exam:index"))
+        logger.error(f"User '{request.POST["username"]}' attempted login with invalid credentials.")
+        for error in form.errors.keys():
+            logger.error(f"{error}: {form.errors[error][0]}")
+            messages.info(request, f"{error}: {form.errors[error][0]}")
+        # messages.info(request, f"Invalid credentials.")
         return redirect(reverse("exam:login"))
 
 def logout_view(request):

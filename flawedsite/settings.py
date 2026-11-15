@@ -84,6 +84,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'flawedsite.wsgi.application'
 
+AUTH_USER_MODEL = "exam.User"
+
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 

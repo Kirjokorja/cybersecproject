@@ -1,6 +1,6 @@
 from django.db import migrations
-from django.contrib.auth.models import User
-from exam.models import Choice, Question, Exam, Result
+# from django.contrib.auth.models import User
+from exam.models import User, Choice, Question, Exam, Result
 
 def add_users(apps, schema_editor):
     User.objects.create_superuser(username="admin", email="admin@admin.example", password="thesuperboss")
