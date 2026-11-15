@@ -140,7 +140,12 @@ class RegisterUserView(View):
             return redirect(reverse("exam:index"))
         for error in form.errors.keys():
             logger.info(f"{error}: {form.errors[error][0]}")
-            messages.info(request, f"{error}: {form.errors[error][0]}")
+            if error == "username":
+                messages.info(request, f"Username: {form.errors[error][0]}")
+            if error == "password1":
+                        messages.info(request, f"Password 1: {form.errors[error][0]}")
+            if error == "password2":
+                        messages.info(request, f"Password 2: {form.errors[error][0]}")
         return redirect(reverse("exam:register-user"))
 
 class LoginView(View):
@@ -172,7 +177,7 @@ class LoginView(View):
         logger.error(f"User '{request.POST["username"]}' attempted login with invalid credentials.")
         for error in form.errors.keys():
             logger.error(f"{error}: {form.errors[error][0]}")
-            messages.info(request, f"{error}: {form.errors[error][0]}")
+            messages.info(request, f"{form.errors[error][0]}")
         # messages.info(request, f"Invalid credentials.")
         return redirect(reverse("exam:login"))
 
