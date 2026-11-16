@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout
 from django.db import connection
 from django.contrib.auth.models import User
-from .models import Choice, Exam, Result
+from .models import Choice, Question, Exam, Result
 from .forms import RegistrationForm, AuthenticationForm
 
 logger = logging.getLogger("django")
@@ -29,10 +29,11 @@ def count_points(results):
         points += result.answered
     return points
 
-def get_exam_results(results):
-    points = count_points(results)
-    result = results[0]
-    return {"id": result.exam.id, "name": result.exam.name, "participant": result.participant.username, "points": points}
+def get_exam_question_answers(results):
+    result_list = []
+    for result in results:
+        result_list.append({"text": result.question, "answer": result.answered})
+    return result_list
 
 def get_exam_question(question):
     choices = question.choices.all().union(Choice.objects.filter(pk=question.answer.id)).order_by("choice_text")
@@ -64,7 +65,7 @@ def index(request):
                     AND exam_exam.id = exam_result.exam_id 
                     AND exam_exam.name LIKE '""" + query + """'
             """
-    #FLAW 3: Injection
+    # FLAW 3: Injection
     # sql = """SELECT DISTINCT exam_exam.id,
     #                         exam_exam.name 
     #                 FROM exam_exam, exam_result 
@@ -136,11 +137,12 @@ def results(request, exam_id):
     if results:
         progress = results.filter(answered = -1)
         if progress:
-            logger.info(f"Exam {"exam_id"} has not been taken yet.")
+            logger.info(f"Exam {exam_id} has not been taken yet by {request.user}.")
             messages.info(request, "The exam has not been taken yet.")
             return redirect(reverse("exam:index"))
-        exam_results = get_exam_results(results)
-        return render(request, "exam/results.html", {"exam_results": exam_results})
+        question_list = get_exam_question_answers(results)
+        context = {"exam_id": exam_id, "exam_name": results[0].exam.name, "participant": results[0].participant.username, "questions": question_list, "points": count_points(results)}
+        return render(request, "exam/results.html", context)
     logger.error(f"Exam {exam_id} does not have any results for user {request.user} or the exam does not exist.")
     return redirect(reverse("exam:index"))
 

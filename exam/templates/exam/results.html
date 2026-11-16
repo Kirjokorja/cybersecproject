@@ -11,11 +11,13 @@
         <input type="submit" value="Logout"/>
     </form>
 
-    <h1>{{ exam_results.name }}</h1>
-
-    <ul>
-        <li>Participant: {{ exam_results.participant }}</li>
-        <li>Points: {{ exam_results.points }}</li>
+    <h1>{{ exam_name }}</h1>
+    <p>Participant: {{ participant }}</p>
+    <p>Points: {{ points }}</p>
+    <ul class="questions">
+        {% for q in questions %}
+        <li>{{ q.text }}: {{q.answer}}</li>
+        {% endfor %}
     </ul>
 
     <a href="{% url 'exam:index' %}">Home</a>
