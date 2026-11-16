@@ -53,6 +53,16 @@ def update_result(result, choice):
 
 @login_required
 @require_GET
+def admin_exams(request):
+    exams = Exam.objects.all()
+    exam_list = []
+    for exam in exams:
+        exam_dict = get_exam_context(exam)
+        exam_list.append(exam_dict)
+    return render(request, "exam/index.html", {"exam_list": exam_list})
+
+@login_required
+@require_GET
 def index(request):
     exams = None
     query = "%%"

@@ -14,6 +14,7 @@ extra_patterns = [
 
 urlpatterns = [
     path("", views.index, name="index"),
+    path("admin/exams/", views.admin_exams, name="admin-exams"),
     path("register-user/", RegisterUserView.as_view(), name="register-user"),
     path("exam/", include(extra_patterns)),
 ]
