@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 from django.views import View
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import OperationalError
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_GET
@@ -85,8 +86,12 @@ def index(request):
     #                 AND exam_exam.name LIKE %s
     #         """
     with connection.cursor() as cursor:
-        exams = cursor.execute(sql).fetchall()
-        # exams = cursor.execute(sql, [request.user.id, query]).fetchall()
+        try:
+            exams = cursor.execute(sql).fetchall()
+            # exams = cursor.execute(sql, [request.user.id, query]).fetchall()
+        except OperationalError as e:
+            logger.error(e)
+            return redirect(reverse("exam:index"))
     exam_list = []
     for exam in exams:
         exam_dict = get_exam_context_list(exam)
@@ -191,32 +196,32 @@ class RegisterUserView(View):
 #         context['form'] = AuthenticationForm()
 #         return render(request, "exam/login.html", context)
 
-    def post(self, request):
-        # username = request.POST["username"]
-        # password = request.POST["password"]
-        # # sql = "SELECT id, password FROM auth_user WHERE username = %s"
-        # # result = None
-        # # with connection.cursor() as cursor:
-        # #     result = cursor.execute(sql, [username]).fetchall()
-        # sql = "SELECT * FROM auth_user WHERE username = %s"
-        # user = User.objects.raw(sql, [username])
-        # if user:
-        #     # user_id = result[0][0]
-        #     # user_password = result[0][1]
-        #     if password == user[0].password:
-        #         login(request, User.objects.get(pk=user[0].id))
-        #         return redirect(reverse("exam:index"))
-        form = AuthenticationForm(data=request.POST)
-        if form.is_valid():
-            login(request, form.get_user())
-            return redirect(reverse("exam:index"))
-        logger.error(f"User '{request.POST["username"]}' attempted login with invalid credentials.")
-        for error in form.errors.keys():
-            logger.error(f"{error}: {form.errors[error][0]}")
-            messages.info(request, f"{form.errors[error][0]}")
-        # messages.info(request, f"Invalid credentials.")
-        return redirect(reverse("exam:login"))
+#     def post(self, request):
+#         # username = request.POST["username"]
+#         # password = request.POST["password"]
+#         # # sql = "SELECT id, password FROM auth_user WHERE username = %s"
+#         # # result = None
+#         # # with connection.cursor() as cursor:
+#         # #     result = cursor.execute(sql, [username]).fetchall()
+#         # sql = "SELECT * FROM auth_user WHERE username = %s"
+#         # user = User.objects.raw(sql, [username])
+#         # if user:
+#         #     # user_id = result[0][0]
+#         #     # user_password = result[0][1]
+#         #     if password == user[0].password:
+#         #         login(request, User.objects.get(pk=user[0].id))
+#         #         return redirect(reverse("exam:index"))
+#         form = AuthenticationForm(data=request.POST)
+#         if form.is_valid():
+#             login(request, form.get_user())
+#             return redirect(reverse("exam:index"))
+#         logger.error(f"User '{request.POST["username"]}' attempted login with invalid credentials.")
+#         for error in form.errors.keys():
+#             logger.error(f"{error}: {form.errors[error][0]}")
+#             messages.info(request, f"{form.errors[error][0]}")
+#         # messages.info(request, f"Invalid credentials.")
+#         return redirect(reverse("exam:login"))
 
-def logout_view(request):
-    logout(request)
-    return redirect(reverse("exam:index"))
+# def logout_view(request):
+#     logout(request)
+#     return redirect(reverse("exam:index"))
