@@ -1,6 +1,7 @@
 from django.db import models
 from django.apps import apps
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.utils import timezone
 from django.contrib.auth.hashers import make_password, check_password
 
 class CustomUserManager(BaseUserManager):
@@ -36,10 +37,8 @@ class CustomUserManager(BaseUserManager):
 
         return self._create_any_user(username, email, password, **extra_fields)
 
-
 class User(AbstractUser):
-    # def __init__(self):
-    #     super().__init__()
+    login_attempts = models.IntegerField(default=0)
 
     objects = CustomUserManager()
 
@@ -62,6 +61,7 @@ class User(AbstractUser):
         if raw_password == self.password:
             return True
         return False
+
 
 class Choice(models.Model):
     choice_text = models.CharField(max_length=200)
@@ -92,3 +92,12 @@ class Result(models.Model):
 
     def __str__(self):
         return self.participant.username + "_" + self.exam.name + "_" + self.question.question_text
+
+class Log(models.Model):
+    time = models.DateTimeField(auto_now=True)
+    event_type = models.CharField()
+    message = models.TextField()
+    actor = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return str(self.time) + "_" + self.event_type

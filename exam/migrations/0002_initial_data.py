@@ -3,7 +3,7 @@ from django.db import migrations
 from exam.models import User, Choice, Question, Exam, Result
 
 def add_users(apps, schema_editor):
-    User.objects.create_superuser(username="admin", email="admin@admin.example", password="thesuperboss")
+    User.objects.create_superuser(username="admin", email="admin@example.com", password="thesuperboss")
     User.objects.create_user(username="seppo", password="smithingismylife")
     User.objects.create_user(username="onerva", password="letsplayhayday")
 

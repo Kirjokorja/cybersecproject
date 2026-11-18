@@ -24,15 +24,4 @@ class RegistrationForm(UserCreationForm):
         label = "Confirm password",
         widget=forms.PasswordInput(),
         validators=[MinLengthValidator(8)]
-    )
-
-# class LoginForm(AuthenticationForm):
-#     username = forms.CharField(
-#         label = "Username",
-#         max_length=30
-#     )
-#     password = forms.CharField(
-#         label = "Password",
-#         widget=forms.PasswordInput()
-#     )
-    
+    )   

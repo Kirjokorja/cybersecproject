@@ -1,4 +1,5 @@
 import logging
+import traceback
 from django.db.models import F
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -12,12 +13,38 @@ from django.views.decorators.http import require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout
 from django.db import connection
-# from django.contrib.auth.models import User
+from django.contrib.admin.models import ADDITION, LogEntry
 from django.contrib.auth.forms import AuthenticationForm
-from .models import Choice, Question, Exam, Result
+from .models import Choice, Question, Exam, Result, Log, User
 from .forms import RegistrationForm
 
 logger = logging.getLogger("django")
+
+def get_ip(request):
+    ip = request.META.get('HTTP_X_FORWARDED_FOR')
+    if ip:
+        ip = ip.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+def reset_login_attempts(user):
+    user.login_attempts = 0
+    user.save()
+
+def user_is_locked(request, user, ip):
+    if user.login_attempts > 1:
+        if user.login_attempts == 2:
+            user.login_attempts = 3
+            user.save()
+            log_event(event="many failed login attempts", actor=user, msg=f"User '{request.POST["username"]}' attempted to login with invalid credentials three consecutive times from IP address {ip}.")
+        else:
+            log_event(event="login attempt to locked account", actor=user, msg=f"User '{request.POST["username"]}' attempted login to locked account from IP address {ip}.")
+        return True
+    return False
+
+def log_event(event="", actor=None, msg=""):
+    Log.objects.create(event_type=event, message=msg, actor=actor)
 
 def get_exam_context(exam):
     return {"id": exam.id, "name": exam.name}
@@ -53,6 +80,18 @@ def update_result(result, choice):
         result.answered = 0
     result.save()
 
+# def error_400(request, exception):
+#     ErrorLog.objects.create(error_type=type(exception), message=f"Exception: {exception}: {traceback.format_exc()}")
+#     return redirect(reverse("exam:index"))
+
+# def error_403(request, exception):
+#     ErrorLog.objects.create(error_type=type(exception), message=f"Exception: {exception}: {traceback.format_exc()}")
+#     return redirect(reverse("exam:index"))
+
+# def error_404(request, exception):
+#     ErrorLog.objects.create(error_type=type(exception), message=f"Exception: {exception}: {traceback.format_exc()}")
+#     return redirect(reverse("exam:index"))
+
 @login_required
 @require_GET
 def admin_exams(request):
@@ -66,7 +105,7 @@ def admin_exams(request):
 @login_required
 @require_GET
 def index(request):
-    exams = None
+    exams = []
     query = "%%"
     if request.GET.__contains__("query"):
         query = "%" + request.GET["query"] + "%"
@@ -86,12 +125,8 @@ def index(request):
     #                 AND exam_exam.name LIKE %s
     #         """
     with connection.cursor() as cursor:
-        try:
-            exams = cursor.execute(sql).fetchall()
-            # exams = cursor.execute(sql, [request.user.id, query]).fetchall()
-        except OperationalError as e:
-            logger.error(e)
-            return redirect(reverse("exam:index"))
+        exams = cursor.execute(sql).fetchall()
+        # exams = cursor.execute(sql, [request.user.id, query]).fetchall()
     exam_list = []
     for exam in exams:
         exam_dict = get_exam_context_list(exam)
@@ -109,25 +144,25 @@ class ExamView(View):
         if results:
             progress = results.filter(answered = -1)
             if not progress:
-                return redirect(reverse("exam:results", kwargs={"exam_id": request.POST["exam_id"]}))
+                return redirect(reverse("exam:results", kwargs={"exam_id": request.POST["exam_id"], "participant": request.user}))
             if request.POST.__contains__("question_id") and request.POST.__contains__("choice_id"):
                 try:
                     result =  progress.get(exam=request.POST["exam_id"], question=request.POST["question_id"])
                 except ObjectDoesNotExist:
-                    logger.error(f"Question with id {request.POST["question_id"]} does not exist in results of exam {request.POST["exam_id"]} for participant {request.user} or it has already been answered.")
+                    logger.warning(f"Question with id {request.POST["question_id"]} does not exist in results of exam {request.POST["exam_id"]} for participant {request.user} or it has already been answered.")
                     return redirect(reverse("exam:index"))
                 try:
                     choice = Choice.objects.get(pk=request.POST["choice_id"])
                 except ObjectDoesNotExist:
-                    logger.error(f"Choice with id {request.POST["choice_id"]} does not exist.")
+                    logger.warning(f"Choice with id {request.POST["choice_id"]} does not exist.")
                     return redirect(reverse("exam:index"))
                 update_result(result, choice)
                 progress = results.filter(answered = -1)
                 if not progress:
-                    return redirect(reverse("exam:results", kwargs={"exam_id": request.POST["exam_id"]}))
+                    return redirect(reverse("exam:results", kwargs={"exam_id": request.POST["exam_id"], "participant": request.user}))
             next_question = progress[0].question
             return redirect(reverse("exam:question", kwargs={"exam_id": request.POST["exam_id"], "question_id": next_question.id}))
-        logger.info(f"Exam {request.POST["exam_id"]} doesn't contain any results for participant {request.user}.")
+        logger.info(f"Exam {request.POST["exam_id"]} doesn't contain any results for participant '{request.user}'.")
         return redirect(reverse("exam:index"))
 
 @login_required
@@ -136,30 +171,34 @@ def question(request, exam_id, question_id):
     try:
         result = Result.objects.get(exam=exam_id, participant=request.user, question=question_id)
     except ObjectDoesNotExist:
-        logger.error(f"Question {question_id} does not exist in results of exam {exam_id} for participant {request.user} or it has already been answered.")
+        logger.warning(f"Question {question_id} does not exist in results of exam {exam_id} for participant '{request.user}'.")
         return redirect(reverse("exam:index"))
     exam_dict = get_exam_context(result.exam)
     if result.answered == -1:
         question_dict = get_exam_question(result.question)
         return render(request, "exam/question.html", {"exam": exam_dict, "question": question_dict})
-    logger.error(f"Question {question_id} in results of exam {exam_id} for participant {request.user} has already been answered.")
+    logger.info(f"Question {question_id} in results of exam {exam_id} for participant '{request.user}' has already been answered.")
     messages.info(request, "The question has already been answered.")
     return redirect(reverse("exam:index"))
 
 @login_required
 @require_GET
-def results(request, exam_id):
-    results = Result.objects.filter(exam=exam_id, participant=request.user)
+def results(request, exam_id, participant):
+    # FLAW 1: Access Control
+    results = Result.objects.filter(exam=exam_id, participant__username=participant)
+    # results = Result.objects.filter(exam=exam_id, participant=request.user)
     if results:
-        progress = results.filter(answered = -1)
-        if progress:
-            logger.info(f"Exam {exam_id} has not been taken yet by {request.user}.")
-            messages.info(request, "The exam has not been taken yet.")
-            return redirect(reverse("exam:index"))
+        # progress = results.filter(answered = -1)
+        # if progress:
+        #     # logger.info(f"Exam {exam_id} has not been taken yet by {request.user}.")
+        #     logger.info(f"Exam {exam_id} has not been taken yet by {participant}.")
+        #     messages.info(request, "The exam has not been taken yet.")
+        #     return redirect(reverse("exam:index"))
         question_list = get_exam_question_answers(results)
         context = {"exam_id": exam_id, "exam_name": results[0].exam.name, "participant": results[0].participant.username, "questions": question_list, "points": count_points(results)}
         return render(request, "exam/results.html", context)
-    logger.error(f"Exam {exam_id} does not have any results for user {request.user} or the exam does not exist.")
+    # logger.warning(f"Exam {exam_id} does not have any results for user {request.user} or the exam does not exist.")
+    logger.warning(f"Exam {exam_id} does not have any results for user {participant} or the exam does not exist.")
     return redirect(reverse("exam:index"))
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -171,57 +210,88 @@ class RegisterUserView(View):
         return render(request, "exam/register_user.html", context)
 
     def post(self, request):
+        ip = get_ip(request)
         form = RegistrationForm(request.POST)
         if form.is_valid():
             # sql = "INSERT INTO auth_user (username, password, is_superuser, last_name, email, is_staff, is_active, date_joined, first_name) VALUES('" + form.data["username"] + "', '" + form.data["password1"] + "', 0, '', '', 0, 1, datetime(), '')"
             # with connection.cursor() as cursor:
             #     cursor.execute(sql)
             form.save()
+            user = User.objects.get(username=request.POST["username"])
+            log_event(event="register user sucess", actor=user, msg=f"User '{user}' registered from IP address {ip}.")
             messages.info(request, "The user has been created successfuly.")
             return redirect(reverse("exam:index"))
+        log_event(event="register user failed", msg=f"Attempt to register username '{request.POST["username"]}' from IP address {ip}.")
         for error in form.errors.keys():
             logger.info(f"{error}: {form.errors[error][0]}")
             if error == "username":
                 messages.info(request, f"Username: {form.errors[error][0]}")
             if error == "password1":
-                        messages.info(request, f"Password 1: {form.errors[error][0]}")
+                messages.info(request, f"Password 1: {form.errors[error][0]}")
             if error == "password2":
-                        messages.info(request, f"Password 2: {form.errors[error][0]}")
+                messages.info(request, f"Password 2: {form.errors[error][0]}")
         return redirect(reverse("exam:register-user"))
 
-# class LoginView(View):
+class LoginView(View):
 
-#     def get(self, request):
-#         context = {}
-#         context['form'] = AuthenticationForm()
-#         return render(request, "exam/login.html", context)
+    def get(self, request):
+        context = {}
+        context['form'] = AuthenticationForm()
+        return render(request, "exam/login.html", context)
 
-#     def post(self, request):
-#         # username = request.POST["username"]
-#         # password = request.POST["password"]
-#         # # sql = "SELECT id, password FROM auth_user WHERE username = %s"
-#         # # result = None
-#         # # with connection.cursor() as cursor:
-#         # #     result = cursor.execute(sql, [username]).fetchall()
-#         # sql = "SELECT * FROM auth_user WHERE username = %s"
-#         # user = User.objects.raw(sql, [username])
-#         # if user:
-#         #     # user_id = result[0][0]
-#         #     # user_password = result[0][1]
-#         #     if password == user[0].password:
-#         #         login(request, User.objects.get(pk=user[0].id))
-#         #         return redirect(reverse("exam:index"))
-#         form = AuthenticationForm(data=request.POST)
-#         if form.is_valid():
-#             login(request, form.get_user())
-#             return redirect(reverse("exam:index"))
-#         logger.error(f"User '{request.POST["username"]}' attempted login with invalid credentials.")
-#         for error in form.errors.keys():
-#             logger.error(f"{error}: {form.errors[error][0]}")
-#             messages.info(request, f"{form.errors[error][0]}")
-#         # messages.info(request, f"Invalid credentials.")
-#         return redirect(reverse("exam:login"))
+    def post(self, request):
+        # username = request.POST["username"]
+        # password = request.POST["password"]
+        # # sql = "SELECT id, password FROM auth_user WHERE username = %s"
+        # # result = None
+        # # with connection.cursor() as cursor:
+        # #     result = cursor.execute(sql, [username]).fetchall()
+        # sql = "SELECT * FROM auth_user WHERE username = %s"
+        # user = User.objects.raw(sql, [username])
+        # if user:
+        #     # user_id = result[0][0]
+        #     # user_password = result[0][1]
+        #     if password == user[0].password:
+        #         login(request, User.objects.get(pk=user[0].id))
+        #         return redirect(reverse("exam:index"))
+        
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect(reverse("exam:index"))
+        logger.error(f"User '{request.POST["username"]}' attempted login with invalid credentials.")
+        for error in form.errors.keys():
+            logger.error(f"{error}: {form.errors[error][0]}")
+            messages.info(request, f"{form.errors[error][0]}")
+        # messages.info(request, f"Invalid credentials.")
+        return redirect(reverse("exam:login"))
 
-# def logout_view(request):
-#     logout(request)
-#     return redirect(reverse("exam:index"))
+        # FLAW 4: Identification and Authentication Failures
+        # ip = get_ip(request)
+        # users = User.objects.filter(username=request.POST["username"])
+        # if users:
+        #     user = users[0]
+        #     if user_is_locked(request=request, user=user, ip=ip):
+        #         messages.info(request, "Invalid credentials.")
+        #         return redirect(reverse("exam:login"))
+        #     elif form.is_valid():
+        #         login(request, user)
+        #         reset_login_attempts(user=user)
+        #         log_event(event="login success", actor=user, msg=f"User '{user.username}' logged in successfuly from IP address {ip}.")   
+        #         return redirect(reverse("exam:index"))
+        #     user.login_attempts = user.login_attempts + 1
+        #     user.save()
+        #     log_event(event="login failed", actor=user, msg=f"User '{request.POST["username"]}' attempted to login with invalid password from IP address {ip}.")
+        #     messages.info(request, "Invalid credentials.")
+        #     return redirect(reverse("exam:login"))
+        # log_event(event="login failed", msg=f"User '{request.POST["username"]}' attempted to login with invalid username from IP address {ip}.")
+        # messages.info(request, "Invalid credentials.")
+        # return redirect(reverse("exam:login"))
+
+
+def logout_view(request):
+    ip = get_ip(request)
+    # FLAW 5: Security Logging and Monitoring Failures
+    # log_event(event="logout", actor=request.user, msg=f"User '{request.user}' logged out from IP address {ip}.")
+    logout(request)
+    return redirect(reverse("exam:index"))
