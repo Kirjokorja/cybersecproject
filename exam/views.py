@@ -104,9 +104,9 @@ def login_data_is_valid(request, form):
 
     if users:
         user = users[0]
-        
+
         if user.is_superuser:
-            log_event(request=request, event="login attempt to normal user pages", actor=user, msg=f"Admin '{user.username}' attempted login to normal user pages")
+            log_event(request=request, event="admin login attempt to normal user pages", actor=user, msg=f"Admin '{user.username}' attempted login to normal user pages")
             return False
 
         if form.is_valid():

@@ -101,7 +101,7 @@ class EventEscalation(models.Model):
     escal_level = models.IntegerField(unique=True)
 
     def __str__(self):
-        return self.escalation_name + "_" + str(self.escalation_level)
+        return self.escal_name
 
 class EventGroup(models.Model):
     group_name = models.CharField(unique=True)
@@ -116,7 +116,7 @@ class LogEvent(models.Model):
     escalation_level = models.ForeignKey(EventEscalation, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.event_group + "_" + self.event_name
+        return self.event_group.group_name + ": " + self.event_name
 
 class Log(models.Model):
     time = models.DateTimeField(auto_now=True)
@@ -125,4 +125,6 @@ class Log(models.Model):
     actor = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
-        return str(self.time) + "_" + self.event_type
+        if self.event_type:
+            return str(self.time) + " " + self.event_type
+        return str(self.time) + " " + self.message 
