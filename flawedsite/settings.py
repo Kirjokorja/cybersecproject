@@ -35,12 +35,14 @@ else:
     load_dotenv(dotenv_path=env_path)
     SECRET_KEY = os.getenv("SECRET_KEY")
     if SECRET_KEY == None:
-        raise ImproperlyConfigured(f"'.env' file is missing 'SECRET_KEY' variable. Make sure the secret key is generated securely.")
+        raise ImproperlyConfigured(f"'.env' file is missing 'SECRET_KEY' variable. Make sure the secret key is generated with a secure algorithm.")
 
 ALLOWED_HOSTS = ["127.0.0.1"]
 
 SESSION_COOKIE_AGE = 10800
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+MAX_LOGIN_ATTEMPTS = 3
 
 # Application definition
 

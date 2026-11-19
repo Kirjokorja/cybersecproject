@@ -5,11 +5,20 @@ from . import views
 
 app_name = "exam"
 
+# FLAW 1: Broken Access Control
+
+# extra_patterns = [
+#     path("", ExamView.as_view(), name="exam"),
+#     path("<int:exam_id>/", views.results, name="results"),
+#     path("<int:exam_id>/question/<int:question_id>/", views.question, name="question"),
+#     path("<int:exam_id>/results/", views.results, name="results"),
+# ]
+
 extra_patterns = [
     path("", ExamView.as_view(), name="exam"),
     path("<int:exam_id>/", views.results, name="results"),
     path("<int:exam_id>/question/<int:question_id>/", views.question, name="question"),
-    path("<int:exam_id>/results/<str:participant>", views.results, name="results"),
+    path("<int:exam_id>/results/<str:participant>/", views.results, name="results"),
 ]
 
 urlpatterns = [

@@ -15,6 +15,8 @@ class CustomUserManager(BaseUserManager):
         )
         username = GlobalUserModel.normalize_username(username)
         user = self.model(username=username, email=email, **extra_fields)
+        # FLAW 2: Cryptographic Failures
+        # user.password = make_password(password)
         user.password = password
 
         user.save(using=self._db)
@@ -42,6 +44,7 @@ class User(AbstractUser):
 
     objects = CustomUserManager()
 
+    # FLAW 2: Cryptographic Failures
     def set_password(self, raw_password):
         self.password = raw_password
         # password hashing
@@ -93,9 +96,31 @@ class Result(models.Model):
     def __str__(self):
         return self.participant.username + "_" + self.exam.name + "_" + self.question.question_text
 
+class EventEscalation(models.Model):
+    escal_name = models.CharField(unique=True)
+    escal_level = models.IntegerField(unique=True)
+
+    def __str__(self):
+        return self.escalation_name + "_" + str(self.escalation_level)
+
+class EventGroup(models.Model):
+    group_name = models.CharField(unique=True)
+    escalation_level = models.ForeignKey(EventEscalation, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.group_name
+
+class LogEvent(models.Model):
+    event_group = models.ForeignKey(EventGroup, on_delete=models.CASCADE)
+    event_name = models.CharField()
+    escalation_level = models.ForeignKey(EventEscalation, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.event_group + "_" + self.event_name
+
 class Log(models.Model):
     time = models.DateTimeField(auto_now=True)
-    event_type = models.CharField()
+    event_type = models.ForeignKey(LogEvent, null=True, on_delete=models.SET_NULL)
     message = models.TextField()
     actor = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 

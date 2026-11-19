@@ -24,4 +24,4 @@ class RegistrationForm(UserCreationForm):
         label = "Confirm password",
         widget=forms.PasswordInput(),
         validators=[MinLengthValidator(8)]
-    )   
+    )
