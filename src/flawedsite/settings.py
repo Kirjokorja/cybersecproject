@@ -42,6 +42,8 @@ else:
 
 ALLOWED_HOSTS = ["127.0.0.1"]
 
+ADMINS = ["admin@example.com"]
+
 SESSION_COOKIE_AGE = 10800
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
@@ -87,13 +89,75 @@ TEMPLATES = [
     },
 ]
 
+MAILERS = {
+    "file": {
+        "BACKEND": "django.core.mail.backends.filebased.EmailBackend",
+        "OPTIONS": {
+            "file_path": "alert.log",
+        },
+    },
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
+        },
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
+    },
+    "formatters": {
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[{server_time}] {message}",
+            "style": "{",
+        }
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+        },
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
+        },
+        "mail_admins_debug": {
+            "level": "INFO",
+            "filters": ["require_debug_true"],
+            "class": "django.utils.log.AdminEmailHandler",
+            "using": "file",
+        },
+        "mail_admins": {
+            "level": "ERROR",
+            "filters": ["require_debug_false"],
+            "class": "django.utils.log.AdminEmailHandler",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "mail_admins", "mail_admins_debug"],
+            "level": "INFO",
+        },
+        "django.server": {
+            "handlers": ["django.server"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
 WSGI_APPLICATION = 'flawedsite.wsgi.application'
 
 AUTH_USER_MODEL = "exam.User"
 
 LOGIN_URL = 'login/'
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases

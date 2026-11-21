@@ -15,7 +15,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from .models import Choice, Exam, Result, Log, User, LogEvent
 from .forms import RegistrationForm
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 def get_ip(request):
     ip = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -36,6 +36,9 @@ def log_event(request, event="", actor=None, msg=""):
     if event_obj.severity_level.severity_level > 2:
         ip = get_ip(request)
         message = msg + f", from IP address {ip}."
+        logger.warning(msg)
+    else:
+        logger.info(msg)
     Log.objects.create(event_type=event_obj, message=message, actor=actor)
 
 def get_exam_context(exam):
@@ -108,7 +111,7 @@ def login_data_is_valid(request, form):
             log_event(request=request,
                       event="admin login attempt to normal user pages",
                       actor=user,
-                      msg=f"Admin '{user.username}' attempted login to normal user pages"
+                      msg="Admin '"+ user.username +"' attempted login to normal user pages"
             )
             return False
 
@@ -126,10 +129,9 @@ def login_data_is_valid(request, form):
             return True
 
         log_event(request=request,
-                  event="login failed",
-                  actor=user,
-                  msg=f"""User '{request.POST["username"]}' attempted
-                   to login with invalid credentials"""
+            event="login failed",
+            actor=user,
+            msg=f"User '{request.POST["username"]}' attempted to login with invalid credentials"
         )
 
         if user.login_attempts > settings.MAX_LOGIN_ATTEMPTS-1:
@@ -153,7 +155,7 @@ def login_data_is_valid(request, form):
     else:
         log_event(request=request,
             event="login failed",
-            msg=f"User '{request.POST["username"]}' attempted to login with invalid credentials"
+            msg=f"User {request.POST["username"]} attempted to login with invalid credentials"
         )
 
     return False
