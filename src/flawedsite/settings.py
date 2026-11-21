@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if DEBUG:   
+if DEBUG:
     SECRET_KEY = secrets.token_hex(32)
 else:
     env_path = os.path.join(BASE_DIR, ".env")
@@ -35,7 +35,10 @@ else:
     load_dotenv(dotenv_path=env_path)
     SECRET_KEY = os.getenv("SECRET_KEY")
     if SECRET_KEY:
-        raise ImproperlyConfigured("'.env' file is missing 'SECRET_KEY' variable. Make sure the secret key is generated with a secure algorithm.")
+        raise ImproperlyConfigured(
+                "'.env' file is missing 'SECRET_KEY' variable. " \
+                "Make sure the secret key is generated with a secure algorithm."
+            )
 
 ALLOWED_HOSTS = ["127.0.0.1"]
 

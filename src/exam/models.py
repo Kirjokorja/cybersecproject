@@ -1,7 +1,6 @@
 from django.db import models
 from django.apps import apps
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.utils import timezone
 from django.contrib.auth.hashers import make_password, check_password
 
 class CustomUserManager(BaseUserManager):
@@ -78,7 +77,7 @@ class Question(models.Model):
     choices = models.ManyToManyField(Choice, related_query_name="questions")
 
     def __str__(self):
-            return str(self.question_text)
+        return str(self.question_text)
 
 class Exam(models.Model):
     name = models.CharField(max_length=200, default="Exam")
@@ -94,14 +93,16 @@ class Result(models.Model):
     answered = models.IntegerField(default=-1)
 
     def __str__(self):
-        return str(self.participant.name) + " " + str(self.exam.name) + " " + str(self.question.question_text)
+        return f"""{str(self.participant.username)}
+                {str(self.exam.name)}
+                {str(self.question.question_text)}"""
 
 class EventSeverity(models.Model):
     severity_name = models.CharField(unique=True)
     severity_level = models.IntegerField(unique=True)
 
     def __str__(self):
-        return str(self.escal_name)
+        return str(self.severity_name)
 
 class EventGroup(models.Model):
     group_name = models.CharField(unique=True)

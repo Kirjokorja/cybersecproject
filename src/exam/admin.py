@@ -14,9 +14,30 @@ class UserAdmin(BaseUserAdmin):
     )
 
 class LogAdmin(admin.ModelAdmin):
-    list_display = ["time", "event_type", "message", "actor", "event_type__severity_level", "event_type__event_group"]
-    list_filter = ["time", "event_type", "message", "actor", "event_type__severity_level", "event_type__event_group"]
-    search_fields = ["time", "event_type", "message", "actor", "event_type__severity_level", "event_type__event_group"]
+    list_display = [
+            "time", 
+            "event_type", 
+            "message", 
+            "actor", 
+            "event_type__severity_level", 
+            "event_type__event_group"
+        ]
+    list_filter = [
+            "time", 
+            "event_type", 
+            "message", 
+            "actor", 
+            "event_type__severity_level", 
+            "event_type__event_group"
+        ]
+    search_fields = [
+            "time", 
+            "event_type", 
+            "message", 
+            "actor", 
+            "event_type__severity_level", 
+            "event_type__event_group"
+        ]
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Choice)
