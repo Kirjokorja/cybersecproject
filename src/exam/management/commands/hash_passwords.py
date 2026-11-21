@@ -19,7 +19,7 @@ class Command(BaseCommand):
                 user.password = make_password(user.password)
                 user.save()
                 self.stdout.write(
-                self.style.SUCCESS('Hashed password of "%s"' % user.username)
+                self.style.SUCCESS("Hashed password of  '%s'", user.username)
                 )
         self.stdout.write(
                 self.style.SUCCESS("Finished password hashing.")

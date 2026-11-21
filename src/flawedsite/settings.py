@@ -26,16 +26,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if DEBUG == True:   
+if DEBUG:   
     SECRET_KEY = secrets.token_hex(32)
 else:
     env_path = os.path.join(BASE_DIR, ".env")
     if not Path(env_path).exists():
-        raise ImproperlyConfigured(f"'.env' file is missing.")
+        raise ImproperlyConfigured("'.env' file is missing.")
     load_dotenv(dotenv_path=env_path)
     SECRET_KEY = os.getenv("SECRET_KEY")
-    if SECRET_KEY == None:
-        raise ImproperlyConfigured(f"'.env' file is missing 'SECRET_KEY' variable. Make sure the secret key is generated with a secure algorithm.")
+    if SECRET_KEY:
+        raise ImproperlyConfigured("'.env' file is missing 'SECRET_KEY' variable. Make sure the secret key is generated with a secure algorithm.")
 
 ALLOWED_HOSTS = ["127.0.0.1"]
 
@@ -47,7 +47,7 @@ MAX_LOGIN_ATTEMPTS = 3
 # Application definition
 
 INSTALLED_APPS = [
-    "exam.apps.ExamConfig",
+    'exam',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -88,8 +88,9 @@ WSGI_APPLICATION = 'flawedsite.wsgi.application'
 
 AUTH_USER_MODEL = "exam.User"
 
-LOGIN_URL = '/login/'
+LOGIN_URL = 'login/'
 LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases

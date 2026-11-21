@@ -1,12 +1,11 @@
 from django.urls import include, path
-from exam.views import ExamView, RegisterUserView, LoginView
+from exam.views import ExamView, RegisterUserView, CustomLoginView, CustomLogoutView
 
 from . import views
 
 app_name = "exam"
 
 # FLAW 1: Broken Access Control
-
 # extra_patterns = [
 #     path("", ExamView.as_view(), name="exam"),
 #     path("<int:exam_id>/", views.results, name="results"),
@@ -22,8 +21,8 @@ extra_patterns = [
 ]
 
 urlpatterns = [
-    path("login/", LoginView.as_view(), name="login"),
-    path("logout/", views.logout_view),
+    path("login/", CustomLoginView.as_view(), name="login"),
+    path("logout/", CustomLogoutView.as_view(), name="logout"),
     path("", views.index, name="index"),
     path("admin/exams/", views.admin_exams, name="admin-exams"),
     path("register-user/", RegisterUserView.as_view(), name="register-user"),

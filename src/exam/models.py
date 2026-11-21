@@ -70,7 +70,7 @@ class Choice(models.Model):
     choice_text = models.CharField(max_length=200)
 
     def __str__(self):
-        return self.choice_text
+        return str(self.choice_text)
 
 class Question(models.Model):
     question_text = models.CharField(max_length=200)
@@ -78,14 +78,14 @@ class Question(models.Model):
     choices = models.ManyToManyField(Choice, related_query_name="questions")
 
     def __str__(self):
-            return self.question_text
+            return str(self.question_text)
 
 class Exam(models.Model):
     name = models.CharField(max_length=200, default="Exam")
     questions = models.ManyToManyField(Question)
 
     def __str__(self):
-            return self.name
+        return str(self.name)
 
 class Result(models.Model):
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
@@ -94,29 +94,29 @@ class Result(models.Model):
     answered = models.IntegerField(default=-1)
 
     def __str__(self):
-        return self.participant.username + "_" + self.exam.name + "_" + self.question.question_text
+        return str(self.participant.name) + " " + str(self.exam.name) + " " + str(self.question.question_text)
 
-class EventEscalation(models.Model):
-    escal_name = models.CharField(unique=True)
-    escal_level = models.IntegerField(unique=True)
+class EventSeverity(models.Model):
+    severity_name = models.CharField(unique=True)
+    severity_level = models.IntegerField(unique=True)
 
     def __str__(self):
-        return self.escal_name
+        return str(self.escal_name)
 
 class EventGroup(models.Model):
     group_name = models.CharField(unique=True)
-    escalation_level = models.ForeignKey(EventEscalation, on_delete=models.CASCADE)
+    severity_level = models.ForeignKey(EventSeverity, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.group_name
+        return str(self.group_name)
 
 class LogEvent(models.Model):
     event_group = models.ForeignKey(EventGroup, on_delete=models.CASCADE)
     event_name = models.CharField()
-    escalation_level = models.ForeignKey(EventEscalation, on_delete=models.CASCADE)
+    severity_level = models.ForeignKey(EventSeverity, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.event_group.group_name + ": " + self.event_name
+        return str(self.event_group.group_name) + ": " + str(self.event_name)
 
 class Log(models.Model):
     time = models.DateTimeField(auto_now=True)
@@ -126,5 +126,5 @@ class Log(models.Model):
 
     def __str__(self):
         if self.event_type:
-            return str(self.time) + " " + self.event_type
-        return str(self.time) + " " + self.message 
+            return str(self.time) + " " + str(self.event_type)
+        return str(self.time) + " " + str(self.message)

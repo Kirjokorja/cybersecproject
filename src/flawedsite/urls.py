@@ -18,13 +18,6 @@ from django.contrib import admin
 from django.urls import include, path
 from django.contrib.auth.views import LoginView, LogoutView
 
-# # bad request
-# handler400 = "exam.views.error_400"
-# # premission denied
-# handler403 = "exam.views.error_403"
-# # page not found
-# handler404 = "exam.views.error_404"
-
 urlpatterns = [
     path("admin/", admin.site.urls),
     # path("login/", LoginView.as_view(template_name="exam/login.html")),

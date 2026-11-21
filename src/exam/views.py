@@ -9,6 +9,7 @@ from django.views import View
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import OperationalError
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView, LogoutView
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_GET
 from django.views.decorators.csrf import csrf_exempt
@@ -18,7 +19,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from .models import Choice, Exam, Result, Log, User, LogEvent
 from .forms import RegistrationForm
 
-logger = logging.getLogger("django")
+logger = logging.getLogger(__name__)
 
 def get_ip(request):
     ip = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -36,7 +37,7 @@ def reset_login_attempts(user):
 def log_event(request, event="", actor=None, msg=""):
     event_obj = LogEvent.objects.get(event_name=event)
     message = msg + "."
-    if event_obj.escalation_level.escal_level > 2:
+    if event_obj.escalation_level.severity_level > 2:
         ip = get_ip(request)
         message = msg + f", from IP address {ip}."
     Log.objects.create(event_type=event_obj, message=message, actor=actor)
@@ -283,13 +284,13 @@ class RegisterUserView(View):
         if form.is_valid():
             form.save()
             user = User.objects.get(username=request.POST["username"])
-            log_event(event="register user success", actor=user, msg=f"User '{user}' registered")
+            log_event(event="register user success", request=request, actor=user, msg=f"User '{user}' registered")
             messages.info(request, "The user has been created successfuly.")
             return redirect(reverse("exam:index"))
         
-        log_event(event="register user failed", msg=f"Attempt to register username '{request.POST["username"]}' failed")
-        for error in form.errors.keys():
-            logger.info(f"{error}: {form.errors[error][0]}")
+        log_event(event="register user failed", request=request, msg=f"Attempt to register username '{request.POST["username"]}' failed")
+        for error in form.errors:
+            logger.info("'%s': '%s'", error, form.errors[error][0])
             if error == "username":
                 messages.info(request, f"Username: {form.errors[error][0]}")
             if error == "password1":
@@ -299,7 +300,7 @@ class RegisterUserView(View):
 
         return redirect(reverse("exam:register-user"))
 
-class LoginView(View):
+class CustomLoginView(LoginView):
 
     def get(self, request):
         context = {}
@@ -318,11 +319,15 @@ class LoginView(View):
             log_event(request=request, event="login success", actor=user, msg=f"User '{user.username}' logged in")  
             return redirect(reverse("exam:index"))
         
-        messages.info(request, f"Invalid credentials.")
+        messages.info(request, "Invalid credentials.")
         return redirect(reverse("exam:login"))
 
-def logout_view(request):
-    user = User.objects.get(pk=request.user.id)
-    logout(request)
-    log_event(request=request, event="logout", actor=user, msg=f"User '{user}' logged out")
-    return redirect(reverse("exam:index"))
+@method_decorator(login_required, name="dispatch")
+class CustomLogoutView(LogoutView):
+
+    def post(self, request):
+        user = User.objects.get(pk=request.user.id)
+        logout(request)
+        log_event(request=request, event="logout", actor=user, msg=f"User '{user}' logged out")
+        # success_url
+        # return redirect(reverse("exam:index"))

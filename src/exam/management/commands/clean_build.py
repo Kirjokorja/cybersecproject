@@ -1,7 +1,7 @@
 import os
 from django.core import management
 from django.core.management.base import BaseCommand, CommandError
-from flawedsite.settings import BASE_DIR
+from src.flawedsite.settings import BASE_DIR
 
 class Command(BaseCommand):
     help = "Makes a clean build by reinitiating the database."

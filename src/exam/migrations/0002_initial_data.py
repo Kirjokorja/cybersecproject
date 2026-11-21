@@ -1,42 +1,42 @@
 from django.db import migrations
 # from django.contrib.auth.models import User
-from exam.models import User, Choice, Question, Exam, Result, EventGroup, LogEvent, EventEscalation
+from exam.models import User, Choice, Question, Exam, Result, EventGroup, LogEvent, EventSeverity
 
-def add_event_escalation_level(apps, schema_editor):
-    EventEscalation.objects.create(escal_name="low", escal_level=1)
-    EventEscalation.objects.create(escal_name="moderate", escal_level=2)
-    EventEscalation.objects.create(escal_name="high", escal_level=3)
-    EventEscalation.objects.create(escal_name="critical", escal_level=4)
+def add_event_severity_level(apps, schema_editor):
+    EventSeverity.objects.create(severity_name="info", severity_level=1)
+    EventSeverity.objects.create(severity_name="warning", severity_level=2)
+    EventSeverity.objects.create(severity_name="error", severity_level=3)
+    EventSeverity.objects.create(severity_name="critical", severity_level=4)
 
 def add_event_groups(apps, schema_editor):
-    level_2 = EventEscalation.objects.get(escal_level=2)
-    level_3 = EventEscalation.objects.get(escal_level=3)
+    level_2 = EventSeverity.objects.get(severity_level=2)
+    level_3 = EventSeverity.objects.get(severity_level=3)
 
-    EventGroup.objects.create(group_name="User Actions", escalation_level=level_2)
-    EventGroup.objects.create(group_name="Admin Actions", escalation_level=level_3)
+    EventGroup.objects.create(group_name="User Actions", severity_level=level_2)
+    EventGroup.objects.create(group_name="Admin Actions", severity_level=level_3)
 
 def add_log_events(apps, schema_editor):
-    level_3 = EventEscalation.objects.get(escal_level=3)
-    level_4 = EventEscalation.objects.get(escal_level=4)
+    level_3 = EventSeverity.objects.get(severity_level=3)
+    level_4 = EventSeverity.objects.get(severity_level=4)
     user_actions = EventGroup.objects.get(group_name="User Actions")
     admin_actions = EventGroup.objects.get(group_name="Admin Actions")
 
-    LogEvent.objects.create(event_group=user_actions, event_name="register user success", escalation_level=user_actions.escalation_level)
-    LogEvent.objects.create(event_group=user_actions, event_name="register user failed", escalation_level=user_actions.escalation_level)
-    LogEvent.objects.create(event_group=user_actions, event_name="login success", escalation_level=user_actions.escalation_level)
-    LogEvent.objects.create(event_group=user_actions, event_name="login failed", escalation_level=user_actions.escalation_level)
-    LogEvent.objects.create(event_group=user_actions, event_name="locked account login attempt", escalation_level=level_3)
-    LogEvent.objects.create(event_group=user_actions, event_name="consecutive failed login attempts", escalation_level=level_3)
-    LogEvent.objects.create(event_group=user_actions, event_name="logout", escalation_level=user_actions.escalation_level)
+    LogEvent.objects.create(event_group=user_actions, event_name="register user success", severity_level=user_actions.severity_level)
+    LogEvent.objects.create(event_group=user_actions, event_name="register user failed", severity_level=user_actions.severity_level)
+    LogEvent.objects.create(event_group=user_actions, event_name="login success", severity_level=user_actions.severity_level)
+    LogEvent.objects.create(event_group=user_actions, event_name="login failed", severity_level=user_actions.severity_level)
+    LogEvent.objects.create(event_group=user_actions, event_name="locked account login attempt", severity_level=level_3)
+    LogEvent.objects.create(event_group=user_actions, event_name="consecutive failed login attempts", severity_level=level_3)
+    LogEvent.objects.create(event_group=user_actions, event_name="logout", severity_level=user_actions.severity_level)
 
-    LogEvent.objects.create(event_group=admin_actions, event_name="admin register success", escalation_level=admin_actions.escalation_level)
-    LogEvent.objects.create(event_group=admin_actions, event_name="admin register failed", escalation_level=admin_actions.escalation_level)
-    LogEvent.objects.create(event_group=admin_actions, event_name="admin login success", escalation_level=admin_actions.escalation_level)
-    LogEvent.objects.create(event_group=admin_actions, event_name="admin login failed", escalation_level=admin_actions.escalation_level)
-    LogEvent.objects.create(event_group=admin_actions, event_name="admin login attempt to normal user pages", escalation_level=level_4)
-    LogEvent.objects.create(event_group=admin_actions, event_name="admin locked account login attempt", escalation_level=level_4)
-    LogEvent.objects.create(event_group=admin_actions, event_name="admin consecutive failed login attempts", escalation_level=level_4)
-    LogEvent.objects.create(event_group=admin_actions, event_name="admin logout", escalation_level=admin_actions.escalation_level)
+    LogEvent.objects.create(event_group=admin_actions, event_name="admin register success", severity_level=admin_actions.severity_level)
+    LogEvent.objects.create(event_group=admin_actions, event_name="admin register failed", severity_level=admin_actions.severity_level)
+    LogEvent.objects.create(event_group=admin_actions, event_name="admin login success", severity_level=admin_actions.severity_level)
+    LogEvent.objects.create(event_group=admin_actions, event_name="admin login failed", severity_level=admin_actions.severity_level)
+    LogEvent.objects.create(event_group=admin_actions, event_name="admin login attempt to normal user pages", severity_level=level_3)
+    LogEvent.objects.create(event_group=admin_actions, event_name="admin locked account login attempt", severity_level=level_3)
+    LogEvent.objects.create(event_group=admin_actions, event_name="admin consecutive failed login attempts", severity_level=level_4)
+    LogEvent.objects.create(event_group=admin_actions, event_name="admin logout", severity_level=admin_actions.severity_level)
     
 
 def add_users(apps, schema_editor):
@@ -103,8 +103,8 @@ def add_participants_to_exams(apps, schema_editor):
     for q in exam_test.questions.all():
         Result.objects.create(exam=exam_test, question=q, participant=onerva)
 
-def remove_event_escalation_level(apps, schema_editor):
-    EventEscalation.objects.all().delete()
+def remove_event_severity_level(apps, schema_editor):
+    EventSeverity.objects.all().delete()
 
 def remove_event_groups(apps, schema_editor):
     EventGroup.objects.all().delete()
@@ -122,7 +122,7 @@ def remove_questions(apps, schema_editor):
     Question.objects.all().delete()
 
 def forward(apps, schema_editor):
-    add_event_escalation_level(apps, schema_editor)
+    add_event_severity_level(apps, schema_editor)
     add_event_groups(apps, schema_editor)
     add_log_events(apps, schema_editor)
     add_users(apps, schema_editor)
@@ -131,7 +131,7 @@ def forward(apps, schema_editor):
     add_participants_to_exams(apps, schema_editor)
 
 def reverse(apps, schema_editor):
-    remove_event_escalation_level(apps, schema_editor)
+    remove_event_severity_level(apps, schema_editor)
     remove_event_groups(apps, schema_editor)
     remove_log_events(apps, schema_editor)
     remove_users(apps, schema_editor)

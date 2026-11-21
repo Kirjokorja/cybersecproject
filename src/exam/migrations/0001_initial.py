@@ -24,11 +24,11 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='EventEscalation',
+            name='EventSeverity',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('escal_name', models.CharField(unique=True)),
-                ('escal_level', models.IntegerField(unique=True)),
+                ('severity_name', models.CharField(unique=True)),
+                ('severity_level', models.IntegerField(unique=True)),
             ],
         ),
         migrations.CreateModel(
@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('group_name', models.CharField(unique=True)),
-                ('escalation_level', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='exam.eventescalation')),
+                ('severity_level', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='exam.eventseverity')),
             ],
         ),
         migrations.CreateModel(
@@ -68,7 +68,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('event_name', models.CharField()),
-                ('escalation_level', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='exam.eventescalation')),
+                ('severity_level', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='exam.eventseverity')),
                 ('event_group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='exam.eventgroup')),
             ],
         ),
