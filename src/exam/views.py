@@ -1,21 +1,22 @@
 import logging
 from django.conf import settings
-from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.urls import reverse
-from django.views import View
-from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import connection
+from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth import login, logout
-from django.db import connection
-from django.contrib.auth.forms import AuthenticationForm
-from .models import Choice, Exam, Result, Log, User, LogEvent
-from .forms import RegistrationForm
+from exam.models import Choice, Exam, Result, User
+from exam.forms import RegistrationForm
+from exam.logging.loggers import default_event_logger as event_logger
 
-logger = logging.getLogger("django")
+logger=logging.getLogger("django")
 
 def get_ip(request):
     ip = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -30,16 +31,16 @@ def reset_login_attempts(user):
     user.save()
 
 # FLAW 5: Security Logging and Monitoring Failures
-def log_event(request, event="", actor=None, msg=""):
-    event_obj = LogEvent.objects.get(event_name=event)
-    message = msg + "."
-    if event_obj.severity_level.severity_level > 2:
-        ip = get_ip(request)
-        message = msg + f", from IP address {ip}."
-        logger.warning(msg)
-    else:
-        logger.info(msg)
-    Log.objects.create(event_type=event_obj, message=message, actor=actor)
+# def log_event(request, event="", actor=None, msg=""):
+#     event_obj = LogEvent.objects.get(event_name=event)
+#     message = msg + "."
+#     if event_obj.severity_level.level > 2:
+#         ip = get_ip(request)
+#         message = msg + f", from IP address {ip}."
+#         logger.warning(msg)
+#     else:
+#         logger.info(msg)
+#     Log.objects.create(event_type=event_obj, message=message, actor=actor)
 
 def get_exam_context(exam):
     return {"id": exam.id, "name": exam.name}
@@ -122,7 +123,7 @@ def login_data_is_valid(request, form):
                 log_event(request=request,
                           event="locked account login attempt",
                           actor=user,
-                          msg=f"User '{user.username}' attempted login to locked account"
+                          msg=f"User '{user.username}' attempted login to a locked account"
                 )
                 return False
 
@@ -137,13 +138,13 @@ def login_data_is_valid(request, form):
         if user.login_attempts > settings.MAX_LOGIN_ATTEMPTS-1:
             log_event(request=request,
                       event="locked account login attempt",
-                      actor=user, msg=f"User '{user.username}' attempted login to locked account"
+                      actor=user, msg=f"User '{user.username}' attempted login to a locked account"
             )
             return False
 
         if user.login_attempts == settings.MAX_LOGIN_ATTEMPTS-1:
             msg = f"""User '{user.username}' attempted to login
-             with invalid credentials {settings.MAX_LOGIN_ATTEMPTS} consecutive times"""
+            with invalid credentials {settings.MAX_LOGIN_ATTEMPTS} consecutive times"""
             log_event(request=request,
                       event="consecutive failed login attempts",
                       actor=user,

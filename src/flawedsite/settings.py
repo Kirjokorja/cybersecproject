@@ -11,41 +11,35 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
-import secrets
 import os
 from dotenv import load_dotenv
-from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env_path = os.path.join(BASE_DIR, ".env")
+try:
+    load_dotenv(dotenv_path=env_path)
+except FileNotFoundError:
+    pass
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if DEBUG:
-    SECRET_KEY = secrets.token_hex(32)
-else:
-    env_path = os.path.join(BASE_DIR, ".env")
-    if not Path(env_path).exists():
-        raise ImproperlyConfigured("'.env' file is missing.")
-    load_dotenv(dotenv_path=env_path)
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    if SECRET_KEY:
-        raise ImproperlyConfigured(
-                "'.env' file is missing 'SECRET_KEY' variable. " \
-                "Make sure the secret key is generated with a secure algorithm."
+SECRET_KEY = os.getenv("SECRET_KEY",
+                "614f57b217f4195e2a0860bad79f4ab1ae0a07bfd25ce87711cd324894ca2e77"
             )
 
-ALLOWED_HOSTS = ["127.0.0.1"]
+ALLOWED_HOSTS = [os.getenv("ALLOWED_HOSTS")]
 
-ADMINS = ["admin@example.com"]
+ADMINS = [os.getenv("ADMINS", "admin@example.com")]
 
-SESSION_COOKIE_AGE = 10800
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = os.getenv("SESSION_COOKIE_AGE", "10800")
+SESSION_EXPIRE_AT_BROWSER_CLOSE = os.getenv("SESSION_EXPIRE_AT_BROWSER_CLOSE", "True")
 
 MAX_LOGIN_ATTEMPTS = 3
 
@@ -90,6 +84,20 @@ TEMPLATES = [
 ]
 
 MAILERS = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+        "OPTIONS": {
+            "host": "localhost",
+            "use_tls": True,
+            "username": "user",
+            "password": "password",
+        },
+    },
+    "admin": {
+        "OPTIONS": {
+            "host": "localhost",
+        },
+    },
     "file": {
         "BACKEND": "django.core.mail.backends.filebased.EmailBackend",
         "OPTIONS": {
@@ -128,15 +136,18 @@ LOGGING = {
             "formatter": "django.server",
         },
         "mail_admins_debug": {
-            "level": "INFO",
+            "level": "WARNING",
             "filters": ["require_debug_true"],
-            "class": "django.utils.log.AdminEmailHandler",
+            "class": "exam.logging.loggers.SafeAdminHandler",
+            "include_html": False,
             "using": "file",
         },
         "mail_admins": {
             "level": "ERROR",
             "filters": ["require_debug_false"],
             "class": "django.utils.log.AdminEmailHandler",
+            "include_html": False,
+            "using": "admin"
         },
     },
     "loggers": {

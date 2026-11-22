@@ -1,23 +1,22 @@
 from django.db import migrations
-# from django.contrib.auth.models import User
 from exam.models import User, Choice, Question, Exam, Result, EventGroup, LogEvent, EventSeverity
 
 def add_event_severity_level(apps, schema_editor):
-    EventSeverity.objects.create(severity_name="info", severity_level=1)
-    EventSeverity.objects.create(severity_name="warning", severity_level=2)
-    EventSeverity.objects.create(severity_name="error", severity_level=3)
-    EventSeverity.objects.create(severity_name="critical", severity_level=4)
+    EventSeverity.objects.create(severity_name="info", level=1)
+    EventSeverity.objects.create(severity_name="warning", level=2)
+    EventSeverity.objects.create(severity_name="error", level=3)
+    EventSeverity.objects.create(severity_name="critical", level=4)
 
 def add_event_groups(apps, schema_editor):
-    level_2 = EventSeverity.objects.get(severity_level=2)
-    level_3 = EventSeverity.objects.get(severity_level=3)
+    level_1 = EventSeverity.objects.get(level=1)
+    level_2 = EventSeverity.objects.get(level=2)
 
-    EventGroup.objects.create(group_name="User Actions", severity_level=level_2)
-    EventGroup.objects.create(group_name="Admin Actions", severity_level=level_3)
+    EventGroup.objects.create(group_name="User Actions", severity_level=level_1)
+    EventGroup.objects.create(group_name="Admin Actions", severity_level=level_2)
 
 def add_log_events(apps, schema_editor):
-    level_3 = EventSeverity.objects.get(severity_level=3)
-    level_4 = EventSeverity.objects.get(severity_level=4)
+    level_3 = EventSeverity.objects.get(level=3)
+    level_4 = EventSeverity.objects.get(level=4)
     user_actions = EventGroup.objects.get(group_name="User Actions")
     admin_actions = EventGroup.objects.get(group_name="Admin Actions")
 
@@ -34,7 +33,7 @@ def add_log_events(apps, schema_editor):
     LogEvent.objects.create(event_group=admin_actions, event_name="admin login success", severity_level=admin_actions.severity_level)
     LogEvent.objects.create(event_group=admin_actions, event_name="admin login failed", severity_level=admin_actions.severity_level)
     LogEvent.objects.create(event_group=admin_actions, event_name="admin login attempt to normal user pages", severity_level=level_3)
-    LogEvent.objects.create(event_group=admin_actions, event_name="admin locked account login attempt", severity_level=level_3)
+    LogEvent.objects.create(event_group=admin_actions, event_name="admin locked account login attempt", severity_level=level_4)
     LogEvent.objects.create(event_group=admin_actions, event_name="admin consecutive failed login attempts", severity_level=level_4)
     LogEvent.objects.create(event_group=admin_actions, event_name="admin logout", severity_level=admin_actions.severity_level)
     

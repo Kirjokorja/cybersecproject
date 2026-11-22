@@ -99,7 +99,7 @@ class Result(models.Model):
 
 class EventSeverity(models.Model):
     severity_name = models.CharField(unique=True)
-    severity_level = models.IntegerField(unique=True)
+    level = models.IntegerField(unique=True)
 
     def __str__(self):
         return str(self.severity_name)
