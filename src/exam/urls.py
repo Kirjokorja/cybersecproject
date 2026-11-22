@@ -8,15 +8,15 @@ app_name = "exam"
 # FLAW 1: Broken Access Control
 # extra_patterns = [
 #     path("", ExamView.as_view(), name="exam"),
-#     path("<int:exam_id>/", views.results, name="results"),
+#     path("<int:exam_id>/", views.results_view, name="results"),
 #     path("<int:exam_id>/question/<int:question_id>/", views.question, name="question"),
-#     path("<int:exam_id>/results/", views.results, name="results"),
+#     path("<int:exam_id>/results/", views.results_view, name="results"),
 # ]
 
 extra_patterns = [
     path("", ExamView.as_view(), name="exam"),
     path("<int:exam_id>/question/<int:question_id>/", views.question_view, name="question"),
-    path("<int:exam_id>/results/<str:participant>/", views.results_view, name="results_view"),
+    path("<int:exam_id>/results/<str:participant>/", views.results_view, name="results"),
 ]
 
 urlpatterns = [

@@ -4,4 +4,6 @@ __pycache__
 inputs
 .vscode
 .env
+*.log
 mail
+tmp

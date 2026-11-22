@@ -93,7 +93,7 @@ MAILERS = {
     "file": {
         "BACKEND": "django.core.mail.backends.filebased.EmailBackend",
         "OPTIONS": {
-            "file_path": "alert.log",
+            "file_path": "tmp/mail",
         },
     },
 }
