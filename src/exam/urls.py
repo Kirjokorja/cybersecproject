@@ -1,5 +1,6 @@
 from django.urls import include, path
 from exam.views import ExamView, RegisterUserView, LoginView
+# , LoginView
 
 from . import views
 

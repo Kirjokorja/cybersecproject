@@ -27,19 +27,18 @@ except FileNotFoundError:
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True")
+DEBUG = True
+# os.getenv("DEBUG", "True")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY",
-                "614f57b217f4195e2a0860bad79f4ab1ae0a07bfd25ce87711cd324894ca2e77"
-            )
+SECRET_KEY = "614f57b217f4195e2a0860bad79f4ab1ae0a07bfd25ce87711cd324894ca2e77"
 
 ALLOWED_HOSTS = [os.getenv("ALLOWED_HOSTS")]
 
 ADMINS = [os.getenv("ADMINS", "admin@example.com")]
 
-SESSION_COOKIE_AGE = os.getenv("SESSION_COOKIE_AGE", "10800")
-SESSION_EXPIRE_AT_BROWSER_CLOSE = os.getenv("SESSION_EXPIRE_AT_BROWSER_CLOSE", "True")
+SESSION_COOKIE_AGE = 10800
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 MAX_LOGIN_ATTEMPTS = 3
 
@@ -138,7 +137,7 @@ LOGGING = {
         "mail_admins_debug": {
             "level": "WARNING",
             "filters": ["require_debug_true"],
-            "class": "exam.logging.loggers.SafeAdminHandler",
+            "class": "django.utils.log.AdminEmailHandler",
             "include_html": False,
             "using": "file",
         },

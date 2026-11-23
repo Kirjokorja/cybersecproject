@@ -13,7 +13,8 @@
         {% endfor %}
     </ul>
     {% endif %}
-    <form action="/register-user/" method="POST">
+    <form action="{% url 'exam:register-user' %}" method="POST">
+      {% csrf_token %}
       {{ form.as_p }}
       <button type="submit">Register</button>
     </form>

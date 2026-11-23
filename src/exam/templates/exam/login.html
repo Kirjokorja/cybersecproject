@@ -5,7 +5,7 @@
     <title>Login</title>
   </head>
   <body>
-    <form action="/register-user/" method="GET">
+    <form action="{% url 'exam:register-user' %}" method="GET">
       <input type="submit" value="Register"/>
     </form>
     {% if messages %}
@@ -16,7 +16,7 @@
     </ul>
     {% endif %}
     <h2>Login</h2>
-    <form action="/login/" method="POST">
+    <form action="{% url 'exam:login' %}" method="POST">
       {% csrf_token %}
       {{ form.as_p }}
       <button type="submit">Login</button>
