@@ -10,15 +10,18 @@ def add_event_severity_level(apps, schema_editor):
 def add_event_groups(apps, schema_editor):
     level_1 = EventSeverity.objects.get(level=1)
     level_2 = EventSeverity.objects.get(level=2)
+    level_3 = EventSeverity.objects.get(level=3)
 
     EventGroup.objects.create(group_name="User Actions", severity_level=level_1)
     EventGroup.objects.create(group_name="Admin Actions", severity_level=level_2)
+    EventGroup.objects.create(group_name="Exceptions", severity_level=level_3)
 
 def add_log_events(apps, schema_editor):
     level_3 = EventSeverity.objects.get(level=3)
     level_4 = EventSeverity.objects.get(level=4)
     user_actions = EventGroup.objects.get(group_name="User Actions")
     admin_actions = EventGroup.objects.get(group_name="Admin Actions")
+    exception = EventGroup.objects.get(group_name="Exceptions")
 
     LogEvent.objects.create(event_group=user_actions, event_name="register user success", severity_level=user_actions.severity_level)
     LogEvent.objects.create(event_group=user_actions, event_name="register user failed", severity_level=user_actions.severity_level)
@@ -36,7 +39,8 @@ def add_log_events(apps, schema_editor):
     LogEvent.objects.create(event_group=admin_actions, event_name="admin locked account login attempt", severity_level=level_4)
     LogEvent.objects.create(event_group=admin_actions, event_name="admin consecutive failed login attempts", severity_level=level_4)
     LogEvent.objects.create(event_group=admin_actions, event_name="admin logout", severity_level=admin_actions.severity_level)
-    
+
+    LogEvent.objects.create(event_group=exception, event_name="GeneralException", severity_level=exception.severity_level)
 
 def add_users(apps, schema_editor):
     User.objects.create_superuser(username="admin", email="admin@example.com", password="thesuperboss")

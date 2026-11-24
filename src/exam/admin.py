@@ -69,7 +69,7 @@ class LogAdmin(admin.ModelAdmin):
             "id",
             "time", 
             "event_type",
-            "message", 
+            "get_message", 
             "actor", 
             "event_type__severity_level", 
             "event_type__event_group"
@@ -89,6 +89,14 @@ class LogAdmin(admin.ModelAdmin):
             "event_type__severity_level", 
             "event_type__event_group"
         ]
+
+    def get_message(self, obj):
+        text = obj.message
+        if len(text) > 20:
+            return text[:20]
+        return text
+
+    get_message.short_description = "Text"
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Choice)
